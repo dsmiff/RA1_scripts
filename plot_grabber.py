@@ -136,7 +136,7 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
 
     h_total = None
     for d in get_dirs(htbins = ht_bins, sele = sele, btag = btag):
-        # print "%s/%s_%s" % (d, h_title, jet_string(njet))
+        print "%s/%s_%s" % (d, h_title, jet_string(njet))
         h = f.Get("%s/%s_%s" % (d, h_title, jet_string(njet))).Clone()
         if "Data" not in f_path:
             # apply ht bin trig effs
@@ -144,7 +144,7 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
                             ht = d.split("_")[-2] if "1075" != d[-4:] else d.split("_")[-1],
                             njet = jet_string(njet)) )
             if "SMS" not in f_path.split("/")[-1]:
-                h.Scale( sb_corr(f_path.split("/")[-1].split("_")[1]) )
+                h.Scale( sb_corr(f_path.split("/")[-1].split("_")[1].split(".")[0]) )
             h.Scale( lumi(sele) )
         if not h_total:
             h_total = h.Clone()
@@ -159,7 +159,7 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
 if __name__ == "__main__":
     print ">>> Running plot_grabber debugger."
     try:
-        dave = grab_plots(f_path = "/Users/chrislucas/SUSY/AnalysisCode/rootfiles/Root_Files_18Nov_alphaT0p53_noSITV_v1/Muon_DY.root",
+        dave = grab_plots(f_path = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/Muon_DY.root",
                             sele = "OneMuon", h_title = "AlphaT", njet = "le3j",
                             btag = "eq0b", ht_bins = ["475_575"])
     except:
