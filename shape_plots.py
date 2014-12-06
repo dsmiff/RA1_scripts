@@ -44,8 +44,8 @@ plot_vars = ["LeadJetPt"]
 # plot_vars = ["Number_Btags"]
 
 # Where you want to store plots
-out_dir = ""
-out_title = ""
+out_dir = "."
+out_stem = "test"
 
 def color_hist(hist, color):
     """
@@ -107,6 +107,21 @@ def title_axes(hist, xtitle, ytitle="Events"):
     hist.SetTitleOffset(hist.GetTitleOffset("Y")*1.2, "Y")
 
 
+def make_standard_text():
+    """
+    Generate standard boring text
+    """
+    t = r.TPaveText(0.6, 0.7, 0.85, 0.85, "NDC")
+    t.AddText("CMS 2012, #sqrt{s} = 8 TeV")
+    t.AddText("")
+    t.AddText("#int L dt = 18.493 fb^{-1}")
+    t.SetFillColor(0)
+    t.SetFillStyle(0)
+    t.SetLineColor(0)
+    t.SetLineStyle(0)
+    return t
+
+
 def make_hists(var, njet, btag, htbins):
     """
     Makes component histograms for any plot: data in signal region, and a list of
@@ -130,7 +145,6 @@ def make_hists(var, njet, btag, htbins):
             hist_mc_signal = MC_signal_tmp.Clone("MC_signal")
         else:
             hist_mc_signal.Add(MC_signal_tmp)
-
 
     # Now do the control regions
     component_hists = []
@@ -159,7 +173,6 @@ def make_hists(var, njet, btag, htbins):
     hist_data_signal = grabr.grab_plots(f_path="%s/Had_Data.root" % ROOTdir,
                                         sele="Had", h_title=var, njet=njet, btag=btag, ht_bins=htbins)
     style_hist(hist_data_signal,"Data")
-
     return hist_data_signal, component_hists
 
 
@@ -183,7 +196,7 @@ def make_plot(var, njet, btag, htbins):
     shape = r.THStack("shape","Like a boss")
     error_hists = None
 
-    leg = r.TLegend(0.7, 0.70, 0.85, 0.85)
+    leg = r.TLegend(0.65, 0.4, 0.8, 0.65)
     leg.SetFillColor(0)
     leg.SetFillStyle(0)
     leg.SetLineColor(0)
@@ -195,10 +208,8 @@ def make_plot(var, njet, btag, htbins):
     for h in component_hists:
         style_hist(h, h.GetName()) # Some shimmer
         shape.Add(h)
-        leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
 
-        # copies for stat error bars
-        # and copies for stat+syste error bars (at some point)
+        # copies for stat/syst error bars
         if not error_hists:
             h_stat = h.Clone()
             style_hist_err1(h_stat, h.GetName())
@@ -209,6 +220,12 @@ def make_plot(var, njet, btag, htbins):
             style_hist_err1(h_stat, h.GetName())
             error_hists.append(h_stat)
 
+    # reverse sort to add entries to the legend
+    for h in sorted(component_hists, key=lambda hist: 1./hist.Integral()):
+        leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
+    leg.AddEntry(error_hists[-1], "Stat. error", "F")
+
+    # Finally draw all the pieces
     c = r.TCanvas()
     c.SetTicks()
     shape.Draw("HIST")
@@ -216,7 +233,9 @@ def make_plot(var, njet, btag, htbins):
     title_axes(shape.GetHistogram(), var, "Events")
     hist_data_signal.Draw("ESAME")
     leg.Draw("SAME")
-    c.SaveAs("test.pdf")
+    txt = make_standard_text()
+    txt.Draw("SAME")
+    c.SaveAs("%s/%s.pdf" % (out_dir, out_stem))
 
 
 def make_plot_bins(var):
