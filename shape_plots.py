@@ -56,11 +56,11 @@ def color_hist(hist, color):
     hist.SetMarkerColor(color)
 
 
-def style_hist(hist, region):
+def style_hist(hist, region, rebin):
     """
     Do some aesthetic stylings on hists.
     """
-    hist.Rebin(4)
+    hist.Rebin(rebin)
     if region == "OneMuon":
         color_hist(hist, r.kViolet+1)
     elif region == "DiMuon":
@@ -106,6 +106,18 @@ def title_axes(hist, xtitle, ytitle="Events"):
     hist.SetYTitle(ytitle)
     hist.SetTitleOffset(hist.GetTitleOffset("Y")*1.2, "Y")
 
+def make_legend():
+    """
+    Generate blank legend
+    """
+    leg = r.TLegend(0.65, 0.4, 0.8, 0.65)
+    leg.SetFillColor(0)
+    leg.SetFillStyle(0)
+    leg.SetLineColor(0)
+    leg.SetLineStyle(0)
+    leg.SetLineWidth(0)
+    return leg
+
 
 def make_standard_text():
     """
@@ -119,6 +131,23 @@ def make_standard_text():
     t.SetFillStyle(0)
     t.SetLineColor(0)
     t.SetLineStyle(0)
+    t.SetLineWidth(0)
+    return t
+
+def make_bin_text(njet, btag, ht_bins):
+    """
+    Generate label of which bin
+    """
+    t = r.TPaveText(0.1, 0.91, 0.5, 0.95, "NDC")
+    b_str = grabr.btag_string(btag) if grabr.btag_string(btag) else "#geq 0"
+
+    tt = t.AddText("%s jets, %s b tags, HT bin %s" % (njet, b_str, ', '.join(ht_bins)))
+    tt.SetTextAlign(12)
+    t.SetFillColor(0)
+    t.SetFillStyle(0)
+    t.SetLineColor(0)
+    t.SetLineStyle(0)
+    t.SetLineWidth(0)
     return t
 
 
@@ -172,41 +201,37 @@ def make_hists(var, njet, btag, htbins):
     # Get data hist
     hist_data_signal = grabr.grab_plots(f_path="%s/Had_Data.root" % ROOTdir,
                                         sele="Had", h_title=var, njet=njet, btag=btag, ht_bins=htbins)
-    style_hist(hist_data_signal,"Data")
     return hist_data_signal, component_hists
 
 
 def make_plot(var, njet, btag, htbins):
     """
-    For a given variable, for given HT, NJet, Nbtag bin,
-    makes data VS background plot.
+    For a given variable, NJet, Nbtag, HT bins,
+    makes data VS background plot, where BG is from data control regions.
     """
 
     hist_data_signal, component_hists = make_hists(var, njet, btag, htbins)
 
-    # Want to add hists to THStack by ascending Integral()
-    component_hists.sort(key=lambda hist: hist.Integral())
+    style_hist(hist_data_signal, "Data", 4)
+
 
     # Little note about putting error bands on each contribution:
     # There is a ROOT bug whereby if you try and make copies of the hists,
     # put into a THStack, and tell it to plot with E2 and set a fill style
     # like 3013, only the last hist will actually render properly,
-    # others will be blocky. So to avoid this we build up TH1s and then
-    # draw those ontop of the main block colours. (5.34.21 MacOSX w/Cocoa)
+    # others will be blocky. So to avoid this we build up cumulative TH1s and
+    # then draw those ontop of the main block colours. (5.34.21 MacOSX w/Cocoa)
     shape = r.THStack("shape","Like a boss")
     error_hists = None
 
-    leg = r.TLegend(0.65, 0.4, 0.8, 0.65)
-    leg.SetFillColor(0)
-    leg.SetFillStyle(0)
-    leg.SetLineColor(0)
-    leg.SetLineStyle(0)
-    leg.AddEntry(hist_data_signal, "Data", "p")
+    leg = make_legend()
+    leg.AddEntry(hist_data_signal, "Data", "pl")
 
-    # Loop through all shape components: add to THStack, make error bars,
-    # make legend
+    # Want to add hists to THStack by ascending Integral()
+    component_hists.sort(key=lambda hist: hist.Integral())
+    # Loop through shape components: style, add to THStack, make error bars
     for h in component_hists:
-        style_hist(h, h.GetName()) # Some shimmer
+        style_hist(h, h.GetName(), 4) # Some shimmer
         shape.Add(h)
 
         # copies for stat/syst error bars
@@ -233,9 +258,11 @@ def make_plot(var, njet, btag, htbins):
     title_axes(shape.GetHistogram(), var, "Events")
     hist_data_signal.Draw("ESAME")
     leg.Draw("SAME")
-    txt = make_standard_text()
-    txt.Draw("SAME")
-    c.SaveAs("%s/%s.pdf" % (out_dir, out_stem))
+    stdtxt = make_standard_text()
+    stdtxt.Draw("SAME")
+    cuttxt = make_bin_text(njet, btag, htbins)
+    cuttxt.Draw("SAME")
+    c.SaveAs("%s/%s_%s.pdf" % (out_dir, out_stem, var))
 
 
 def make_plot_bins(var):
