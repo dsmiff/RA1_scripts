@@ -35,6 +35,8 @@ n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
 # MC processes that go into transfer factors
 processes = ['DY', 'Data', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']
 
+# Control regions to get data shapes (+ proper titles for legend etc)
+ctrl_regions = {"OneMuon":"Single #mu BG", "DiMuon":"#mu#mu BG"}
 
 # Variable(s) you want to plot
 # "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
@@ -45,6 +47,14 @@ plot_vars = ["LeadJetPt"]
 out_dir = ""
 out_title = ""
 
+def color_hist(hist, color):
+    """
+    Set marker/line/fill color for histogram
+    """
+    hist.SetLineColor(color)
+    hist.SetFillColor(color)
+    hist.SetMarkerColor(color)
+
 
 def style_hist(hist, region):
     """
@@ -52,13 +62,9 @@ def style_hist(hist, region):
     """
     hist.Rebin(4)
     if region == "OneMuon":
-        hist.SetLineColor(r.kViolet+2)
-        hist.SetFillColor(r.kViolet+2)
-        hist.SetMarkerColor(r.kViolet+2)
+        color_hist(hist, r.kViolet+1)
     elif region == "DiMuon":
-        hist.SetLineColor(r.kOrange)
-        hist.SetFillColor(r.kOrange)
-        hist.SetMarkerColor(r.kOrange)
+        color_hist(hist, r.kOrange)
     elif region == "Data":
         hist.SetMarkerColor(r.kBlack)
         # hist.SetMarkerSize(2)
@@ -71,26 +77,12 @@ def style_hist_err1(hist, region):
     Do some aesthetic stylings on error bars.
     """
     # hist.Rebin(4)
-    if region == "OneMuon":
-        hist.SetMarkerStyle(0);
-        hist.SetMarkerSize(0);
-        hist.SetLineColor(r.kGray+3);
-        hist.SetLineWidth(0);
-        hist.SetFillColor(r.kGray+3);
-        hist.SetFillStyle(3002);
-    elif region == "DiMuon":
-        hist.SetMarkerStyle(0);
-        hist.SetMarkerSize(0);
-        hist.SetLineColor(r.kGray+3);
-        hist.SetLineWidth(0);
-        hist.SetFillColor(r.kGray+3);
-        hist.SetFillStyle(3003);
-    elif region == "Data":
-        pass
-        # hist.SetMarkerColor(r.kBlack)
-        # hist.SetMarkerSize(2)
-        # hist.SetMarkerStyle(20)
-        # hist.SetLineColor(r.kBlack)
+    hist.SetMarkerStyle(0);
+    hist.SetMarkerSize(0);
+    hist.SetLineColor(r.kGray+3);
+    hist.SetLineWidth(0);
+    hist.SetFillColor(r.kGray+3);
+    hist.SetFillStyle(3002)
 
 
 def style_hist_err2(hist, region):
@@ -98,27 +90,17 @@ def style_hist_err2(hist, region):
     Do some alternate stylings on error bars.
     """
     # hist.Rebin(4)
-    if region == "OneMuon":
-        hist.SetLineColor(r.kViolet+2)
-        hist.SetFillColor(r.kViolet+2)
-        hist.SetMarkerColor(r.kViolet+2)
-        hist.SetFillStyle(3013)
-    elif region == "DiMuon":
-        hist.SetLineColor(r.kOrange)
-        hist.SetFillColor(r.kOrange)
-        hist.SetMarkerColor(r.kOrange)
-        hist.SetFillStyle(3013)
-    elif region == "Data":
-        pass
-        # hist.SetMarkerColor(r.kBlack)
-        # hist.SetMarkerSize(2)
-        # hist.SetMarkerStyle(20)
-        # hist.SetLineColor(r.kBlack)
+    hist.SetMarkerStyle(0);
+    hist.SetMarkerSize(0);
+    hist.SetLineColor(r.kGray+3);
+    hist.SetLineWidth(0);
+    hist.SetFillColor(r.kGray+3);
+    hist.SetFillStyle(3013)
 
 
 def title_axes(hist, xtitle, ytitle="Events"):
     """
-    Apply title to axes
+    Apply title to axes, do offsets, sizes
     """
     hist.SetXTitle(xtitle)
     hist.SetYTitle(ytitle)
@@ -150,9 +132,8 @@ def make_hists(var, njet, btag, htbins):
             hist_mc_signal.Add(MC_signal_tmp)
 
 
-    # Now do the single mu and di mu regions
+    # Now do the control regions
     component_hists = []
-    ctrl_regions = ["OneMuon", "DiMuon"]
     for ctrl in ctrl_regions:
         hist_data_control = grabr.grab_plots(f_path="%s/Muon_Data.root" % ROOTdir,
                                              sele=ctrl, h_title=var, njet=njet, btag=btag, ht_bins=htbins)
@@ -190,22 +171,31 @@ def make_plot(var, njet, btag, htbins):
 
     hist_data_signal, component_hists = make_hists(var, njet, btag, htbins)
 
-    # Add hists to THStack by ascending Integral
-    shape = r.THStack("shape","Awesome shape prediction")
-    shape_stat = r.THStack("shape_stat","Awesome shape prediction with stat errors")
-    shape_stat_syst = r.THStack("shape_stat_syst","Awesome shape prediction with stat & syst errors")
-
+    # Want to add hists to THStack by ascending Integral()
     component_hists.sort(key=lambda hist: hist.Integral())
+
     # Little note about putting error bands on each contribution:
     # There is a ROOT bug whereby if you try and make copies of the hists,
     # put into a THStack, and tell it to plot with E2 and set a fill style
     # like 3013, only the last hist will actually render properly,
     # others will be blocky. So to avoid this we build up TH1s and then
     # draw those ontop of the main block colours. (5.34.21 MacOSX w/Cocoa)
+    shape = r.THStack("shape","Like a boss")
     error_hists = None
+
+    leg = r.TLegend(0.7, 0.70, 0.85, 0.85)
+    leg.SetFillColor(0)
+    leg.SetFillStyle(0)
+    leg.SetLineColor(0)
+    leg.SetLineStyle(0)
+    leg.AddEntry(hist_data_signal, "Data", "p")
+
+    # Loop through all shape components: add to THStack, make error bars,
+    # make legend
     for h in component_hists:
         style_hist(h, h.GetName()) # Some shimmer
         shape.Add(h)
+        leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
 
         # copies for stat error bars
         # and copies for stat+syste error bars (at some point)
@@ -225,21 +215,22 @@ def make_plot(var, njet, btag, htbins):
     [h.Draw("E2 SAME") for h in error_hists]
     title_axes(shape.GetHistogram(), var, "Events")
     hist_data_signal.Draw("ESAME")
+    leg.Draw("SAME")
     c.SaveAs("test.pdf")
 
 
 def make_plot_bins(var):
     """
-    For a given variable, makes data VS background plots for all the relevant HT, Njets, Nbtag bins
+    For a given variable, makes data VS background plots for all the
+    relevant HT, Njets, Nbtag bins
     """
-    # for njet, btag, ht_bins in product(n_j, n_b, ht):
-        # make_plot(var, njet, btag, ht_bins)
-    make_plot(var, "le3j", "ge0b", ["475_575"])
+    for v in var:
+        print "Doing plots for", var
+        # for njet, btag, ht_bins in product(n_j, n_b, ht):
+            # make_plot(v, njet, btag, ht_bins)
+        make_plot(v, "le3j", "ge0b", ["475_575"])
 
 
 if __name__ == "__main__":
     print "Making lots of data VS bg plots..."
-
-    for var in plot_vars:
-        print "Doing plots for", var
-        make_plot_bins(var)
+    make_plot_bins(plot_vars)
