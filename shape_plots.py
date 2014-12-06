@@ -33,8 +33,6 @@ n_j = ["le3j", "ge4j", "ge2j"][:2]
 n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
 
 # MC processes that go into transfer factors
-# processes = ['DY', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']
-
 processes_mc_ctrl = ['DY', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']
 
 processes_mc_signal_le1b = { "OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'SingleTop'],
@@ -119,7 +117,7 @@ def make_legend():
     """
     Generate blank legend
     """
-    leg = r.TLegend(0.65, 0.4, 0.85, 0.65)
+    leg = r.TLegend(0.69, 0.4, 0.89, 0.65)
     leg.SetFillColor(0)
     leg.SetFillStyle(0)
     leg.SetLineColor(0)
@@ -132,7 +130,7 @@ def make_standard_text():
     """
     Generate standard boring text
     """
-    t = r.TPaveText(0.6, 0.7, 0.85, 0.85, "NDC")
+    t = r.TPaveText(0.65, 0.73, 0.86, 0.87, "NDC")
     t.AddText("CMS 2012, #sqrt{s} = 8 TeV")
     t.AddText("")
     t.AddText("#int L dt = 18.493 fb^{-1}")
@@ -150,7 +148,7 @@ def make_bin_text(njet, btag, ht_bins):
     t = r.TPaveText(0.1, 0.91, 0.5, 0.95, "NDC")
     b_str = grabr.btag_string(btag) if grabr.btag_string(btag) else "geq 0 btag"
 
-    tt = t.AddText("%s, %s, HT bin %s" % (njet, b_str, ', '.join(ht_bins)))
+    tt = t.AddText("%s, %s, HT bin %s" % (njet, b_str, ht_bins))
     tt.SetTextAlign(12)
     t.SetFillColor(0)
     t.SetFillStyle(0)
@@ -259,7 +257,7 @@ def make_hists(var, njet, btag, htbins):
     return hist_data_signal, component_hists
 
 
-def make_plot(var, njet, btag, htbins, rebin=4):
+def make_plot(var, njet, btag, htbins, rebin=2, log=False):
     """
     For a given variable, NJet, Nbtag, HT bins,
     makes data VS background plot, where BG is from data control regions.
@@ -300,12 +298,15 @@ def make_plot(var, njet, btag, htbins, rebin=4):
             error_hists.append(h_stat)
 
     # reverse sort to add entries to the legend
-    for h in sorted(component_hists, key=lambda hist: 1./hist.Integral()):
+    # for h in sorted(component_hists, key=lambda hist: 1./hist.Integral()):
+    for h in reversed(component_hists):
         leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
     leg.AddEntry(error_hists[-1], "BG Stat. error", "F")
 
     # Finally draw all the pieces
     c = r.TCanvas()
+    # if log:
+    c.SetLogy(log)
     c.SetTicks()
     if hist_data_signal.GetMaximum() > error_hists[-1].GetMaximum():
         hist_data_signal.Draw()
@@ -313,6 +314,7 @@ def make_plot(var, njet, btag, htbins, rebin=4):
     else:
         shape.Draw("HIST")
     [h.Draw("E2 SAME") for h in error_hists]
+    title_axes(hist_data_signal, var, "Events")
     title_axes(shape.GetHistogram(), var, "Events")
     hist_data_signal.Draw("ESAME")
     leg.Draw("SAME")
@@ -320,7 +322,7 @@ def make_plot(var, njet, btag, htbins, rebin=4):
     stdtxt.Draw("SAME")
     cuttxt = make_bin_text(njet, btag, htbins)
     cuttxt.Draw("SAME")
-    c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (out_dir, out_stem, var, njet, btag, htbins[0]))
+    c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (out_dir, out_stem, var, njet, btag, htbins))
 
 
 def make_plot_bins(var):
@@ -328,11 +330,15 @@ def make_plot_bins(var):
     For a given variable, makes data VS background plots for all the
     relevant HT, Njets, Nbtag bins
     """
-    for v in var:
-        print "Doing plots for", v
-        # for njet, btag, ht_bins in product(n_j, n_b, ht):
-        #     make_plot(v, njet, btag, ht_bins)
-        make_plot(v, "le3j", "eq0b", ["475_575"])
+    # for v in var:
+    #     print "Doing plots for", v
+    #     for njet, btag, ht_bins in product(n_j, n_b, HTbins):
+    #         if v in ["Number_Btags", "JetMultiplicity"]:
+    #             rebin = 1
+    #         else:
+    #             rebin = 2
+    #         make_plot(v, njet, btag, ht_bins, rebin, log=true)
+    make_plot("LeadJetEta", "le3j", "eq0b", "475_575", rebin=2, log=False)
 
 
 if __name__ == "__main__":
