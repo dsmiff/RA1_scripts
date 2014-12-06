@@ -33,14 +33,23 @@ n_j = ["le3j", "ge4j", "ge2j"][:2]
 n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
 
 # MC processes that go into transfer factors
-processes = ['DY', 'Data', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']
+# processes = ['DY', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']
+
+processes_mc_ctrl = ['DY', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']
+
+processes_mc_signal_le1b = { "OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'SingleTop'],
+                             "DiMuon": ['Zinv']}
+
+processes_mc_signal_ge2b = { "OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'SingleTop', 'Zinv'],
+                             "DiMuon": []} # for >= 2btags dimu region not used
 
 # Control regions to get data shapes (+ proper titles for legend etc)
 ctrl_regions = {"OneMuon":"Single #mu BG", "DiMuon":"#mu#mu BG"}
 
 # Variable(s) you want to plot
 # "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
-plot_vars = ["LeadJetPt"]
+plot_vars = ["AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta", "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected", "MHTovMET", "ComMinBiasDPhi", "EffectiveMass"]#, "Number_Btags"]
+# plot_vars = ["LeadJetPt", "SecondJetEta"]
 # plot_vars = ["Number_Btags"]
 
 # Where you want to store plots
@@ -110,7 +119,7 @@ def make_legend():
     """
     Generate blank legend
     """
-    leg = r.TLegend(0.65, 0.4, 0.8, 0.65)
+    leg = r.TLegend(0.65, 0.4, 0.85, 0.65)
     leg.SetFillColor(0)
     leg.SetFillStyle(0)
     leg.SetLineColor(0)
@@ -139,9 +148,9 @@ def make_bin_text(njet, btag, ht_bins):
     Generate label of which bin
     """
     t = r.TPaveText(0.1, 0.91, 0.5, 0.95, "NDC")
-    b_str = grabr.btag_string(btag) if grabr.btag_string(btag) else "#geq 0"
+    b_str = grabr.btag_string(btag) if grabr.btag_string(btag) else "geq 0 btag"
 
-    tt = t.AddText("%s jets, %s b tags, HT bin %s" % (njet, b_str, ', '.join(ht_bins)))
+    tt = t.AddText("%s, %s, HT bin %s" % (njet, b_str, ', '.join(ht_bins)))
     tt.SetTextAlign(12)
     t.SetFillColor(0)
     t.SetFillStyle(0)
@@ -165,55 +174,100 @@ def make_hists(var, njet, btag, htbins):
     in their own list (one for each control region)
     """
 
-    # factor out common part - amount of MC in signal selection
-    hist_mc_signal = None
-    for p in processes:
-        MC_signal_tmp = grabr.grab_plots(f_path="%s/Had_%s.root" % (ROOTdir, p),
-                                         sele="Had", h_title=var, njet=njet, btag=btag, ht_bins=htbins)
-        if not hist_mc_signal:
-            hist_mc_signal = MC_signal_tmp.Clone("MC_signal")
-        else:
-            hist_mc_signal.Add(MC_signal_tmp)
-
-    # Now do the control regions
     component_hists = []
     for ctrl in ctrl_regions:
-        hist_data_control = grabr.grab_plots(f_path="%s/Muon_Data.root" % ROOTdir,
+        print "**** DOING", ctrl
+
+        if "Muon" in ctrl:
+            f_start = "Muon"
+        elif "Photon" in ctrl:
+            f_start = "Photon"
+        # else:
+            # f_start = "Had"
+
+        # Data in control region:
+        hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (ROOTdir, f_start),
                                              sele=ctrl, h_title=var, njet=njet, btag=btag, ht_bins=htbins)
         hist_data_control.SetName(ctrl) # for styling later
 
+        # MC in signal region
+        if "0" in btag or "1" in btag:
+            processes = processes_mc_signal_le1b
+        else:
+            processes = processes_mc_signal_ge2b
+
+        print "MC in signal region:"
+        hist_mc_signal = None
+        for p in processes[ctrl]:
+            MC_signal_tmp = grabr.grab_plots(f_path="%s/Had_%s.root" % (ROOTdir, p),
+                                             sele="Had", h_title=var, njet=njet, btag=btag, ht_bins=htbins)
+            if not hist_mc_signal:
+                hist_mc_signal = MC_signal_tmp.Clone("MC_signal")
+            else:
+                hist_mc_signal.Add(MC_signal_tmp)
+
+            print p, hist_mc_signal.Integral()
+
+        # MC in control region
+        print "MC in control region:"
         hist_mc_control = None
-        for p in processes:
-            MC_ctrl_tmp = grabr.grab_plots(f_path="%s/Muon_%s.root" % (ROOTdir, p),
+        for p in processes_mc_ctrl:
+            MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (ROOTdir, f_start, p),
                                            sele=ctrl, h_title=var, njet=njet, btag=btag, ht_bins=htbins)
             if not hist_mc_control:
                 hist_mc_control = MC_ctrl_tmp.Clone()
             else:
                 hist_mc_control.Add(MC_ctrl_tmp)
 
+            print p, hist_mc_control.Integral()
+
+        mc_signal_err = r.Double(-1.)
+        mc_signal_integral = hist_mc_signal.IntegralAndError(1, hist_mc_signal.GetNbinsX(), mc_signal_err)
+        mc_control_err = r.Double(-1.)
+        mc_control_integral = hist_mc_control.IntegralAndError(1, hist_mc_control.GetNbinsX(), mc_control_err)
+        data_control_err = r.Double(-1.)
+        data_control_integral = hist_data_control.IntegralAndError(1, hist_data_control.GetNbinsX(), data_control_err)
+
+        print ctrl
+        print "Data control: integral: %.3f +/- %.3f" % (data_control_integral, data_control_err)
+        print "MC signal: integral: %.3f +/- %.3f"  % (mc_signal_integral, mc_signal_err)
+        print "MC control: integral: %.3f +/- %.3f" % (mc_control_integral, mc_control_err)
+
         # Divide, multiply, and add to total shape
-        err = 0.
-        integral = hist_mc_signal.IntegralAndError(1, hist_mc_signal.GetNbinsX(),r.Double(err))
-        print integral, err
-        hist_data_control.Scale(hist_mc_signal.Integral()/hist_mc_control.Integral())
+        # ROOT's Multiply()/Divide() are bin-by-bin. To propagate the errors,
+        # we need copies of the hists we want to multiply/divide, with ALL bins
+        # set to Integral +/- (Error on Integral)
+        hist_mc_signal_factor = hist_mc_signal.Clone()
+        hist_mc_control_factor = hist_mc_control.Clone()
+
+        for i in range(1,1+hist_mc_signal_factor.GetNbinsX()):
+            hist_mc_signal_factor.SetBinContent(i, mc_signal_integral)
+            hist_mc_signal_factor.SetBinError(i, mc_signal_err)
+            hist_mc_control_factor.SetBinContent(i, mc_control_integral)
+            hist_mc_control_factor.SetBinError(i, mc_control_err)
+
+        hist_mc_signal_factor.Divide(hist_mc_control_factor)
+        hist_data_control.Multiply(hist_mc_signal_factor)
+        print "Transfer Factor for %s: %.3f +/- %.3f" % (ctrl, hist_mc_signal_factor.GetBinContent(1), hist_mc_signal_factor.GetBinError(1))
         component_hists.append(hist_data_control)
+        print "Estimate:", hist_data_control.Integral()
 
     # Get data hist
     hist_data_signal = grabr.grab_plots(f_path="%s/Had_Data.root" % ROOTdir,
                                         sele="Had", h_title=var, njet=njet, btag=btag, ht_bins=htbins)
+    print "Data SR:", hist_data_signal.Integral()
     return hist_data_signal, component_hists
 
 
-def make_plot(var, njet, btag, htbins):
+def make_plot(var, njet, btag, htbins, rebin=4):
     """
     For a given variable, NJet, Nbtag, HT bins,
     makes data VS background plot, where BG is from data control regions.
     """
-
+    # Get our data & BG shapes
     hist_data_signal, component_hists = make_hists(var, njet, btag, htbins)
 
-    style_hist(hist_data_signal, "Data", 4)
-
+    style_hist(hist_data_signal, "Data", rebin)
 
     # Little note about putting error bands on each contribution:
     # There is a ROOT bug whereby if you try and make copies of the hists,
@@ -221,17 +275,17 @@ def make_plot(var, njet, btag, htbins):
     # like 3013, only the last hist will actually render properly,
     # others will be blocky. So to avoid this we build up cumulative TH1s and
     # then draw those ontop of the main block colours. (5.34.21 MacOSX w/Cocoa)
-    shape = r.THStack("shape","Like a boss")
+    shape = r.THStack("shape","")
     error_hists = None
 
     leg = make_legend()
-    leg.AddEntry(hist_data_signal, "Data", "pl")
+    leg.AddEntry(hist_data_signal, "Data + stat. error", "pl")
 
     # Want to add hists to THStack by ascending Integral()
     component_hists.sort(key=lambda hist: hist.Integral())
-    # Loop through shape components: style, add to THStack, make error bars
+    # Loop through shape components: mod style, add to THStack, make error bars
     for h in component_hists:
-        style_hist(h, h.GetName(), 4) # Some shimmer
+        style_hist(h, h.GetName(), rebin) # Some shimmer BEFORE adding to stack
         shape.Add(h)
 
         # copies for stat/syst error bars
@@ -248,12 +302,16 @@ def make_plot(var, njet, btag, htbins):
     # reverse sort to add entries to the legend
     for h in sorted(component_hists, key=lambda hist: 1./hist.Integral()):
         leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
-    leg.AddEntry(error_hists[-1], "Stat. error", "F")
+    leg.AddEntry(error_hists[-1], "BG Stat. error", "F")
 
     # Finally draw all the pieces
     c = r.TCanvas()
     c.SetTicks()
-    shape.Draw("HIST")
+    if hist_data_signal.GetMaximum() > error_hists[-1].GetMaximum():
+        hist_data_signal.Draw()
+        shape.Draw("HIST SAME")
+    else:
+        shape.Draw("HIST")
     [h.Draw("E2 SAME") for h in error_hists]
     title_axes(shape.GetHistogram(), var, "Events")
     hist_data_signal.Draw("ESAME")
@@ -262,7 +320,7 @@ def make_plot(var, njet, btag, htbins):
     stdtxt.Draw("SAME")
     cuttxt = make_bin_text(njet, btag, htbins)
     cuttxt.Draw("SAME")
-    c.SaveAs("%s/%s_%s.pdf" % (out_dir, out_stem, var))
+    c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (out_dir, out_stem, var, njet, btag, htbins[0]))
 
 
 def make_plot_bins(var):
@@ -271,10 +329,10 @@ def make_plot_bins(var):
     relevant HT, Njets, Nbtag bins
     """
     for v in var:
-        print "Doing plots for", var
+        print "Doing plots for", v
         # for njet, btag, ht_bins in product(n_j, n_b, ht):
-            # make_plot(v, njet, btag, ht_bins)
-        make_plot(v, "le3j", "ge0b", ["475_575"])
+        #     make_plot(v, njet, btag, ht_bins)
+        make_plot(v, "le3j", "eq0b", ["475_575"])
 
 
 if __name__ == "__main__":
