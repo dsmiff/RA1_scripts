@@ -17,6 +17,7 @@ Robin Aggleton
 import plot_grabber as grabr
 import ROOT as r
 from itertools import product
+import math
 
 r.TH1.SetDefaultSumw2(True)
 r.gStyle.SetOptStat(0)
@@ -24,6 +25,16 @@ r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 
 ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/"
+
+# Variable(s) you want to plot
+# "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
+plot_vars = ["AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
+             "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
+             "MHTovMET", "ComMinBiasDPhi", "EffectiveMass"]#, "Number_Btags"]
+
+# Where you want to store plots
+out_dir = "."
+out_stem = "test"
 
 # Define region bins
 HTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
@@ -44,15 +55,11 @@ processes_mc_signal_ge2b = { "OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'Sin
 # Control regions to get data shapes (+ proper titles for legend etc)
 ctrl_regions = {"OneMuon":"Single #mu BG", "DiMuon":"#mu#mu BG"}
 
-# Variable(s) you want to plot
-# "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
-plot_vars = ["AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta", "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected", "MHTovMET", "ComMinBiasDPhi", "EffectiveMass"]#, "Number_Btags"]
-# plot_vars = ["LeadJetPt", "SecondJetEta"]
-# plot_vars = ["Number_Btags"]
-
-# Where you want to store plots
-out_dir = "."
-out_stem = "test"
+# Sytematics on TF (as a %). Fn on njets & HT
+tf_systs = {
+    "le3j":{"200_275":4, "275_325":6, "325_375":6, "375_475":8, "475_575":8, "575_675":12, "675_775":12, "775_875":17, "875_975":17, "975_1075":19, "1075":19},
+    "ge4j":{"200_275":6, "275_325":6, "325_375":11, "375_475":11, "475_575":11, "575_675":18, "675_775":18, "775_875":20, "875_975":20, "975_1075":26, "1075":26}
+}
 
 def color_hist(hist, color):
     """
@@ -117,7 +124,7 @@ def make_legend():
     """
     Generate blank legend
     """
-    leg = r.TLegend(0.69, 0.4, 0.89, 0.65)
+    leg = r.TLegend(0.69, 0.49, 0.88, 0.72)
     leg.SetFillColor(0)
     leg.SetFillStyle(0)
     leg.SetLineColor(0)
@@ -141,13 +148,13 @@ def make_standard_text():
     t.SetLineWidth(0)
     return t
 
+
 def make_bin_text(njet, btag, ht_bins):
     """
     Generate label of which bin
     """
     t = r.TPaveText(0.1, 0.91, 0.5, 0.95, "NDC")
     b_str = grabr.btag_string(btag) if grabr.btag_string(btag) else "geq 0 btag"
-
     tt = t.AddText("%s, %s, HT bin %s" % (njet, b_str, ht_bins))
     tt.SetTextAlign(12)
     t.SetFillColor(0)
@@ -156,6 +163,16 @@ def make_bin_text(njet, btag, ht_bins):
     t.SetLineStyle(0)
     t.SetLineWidth(0)
     return t
+
+
+def set_syst_errors(h, njet, htbins):
+    """
+    Turns stat errors into stat+syst errors using LUT at top
+    """
+    for i in range(1, h.GetNbinsX()+1):
+        syst = tf_systs[njet][htbins]/100.
+        err = math.pow(h.GetBinError(i),2)+math.pow(h.GetBinContent(i)*syst,2)
+        h.SetBinError(i, math.sqrt(err))
 
 
 def make_hists(var, njet, btag, htbins):
@@ -274,7 +291,8 @@ def make_plot(var, njet, btag, htbins, rebin=2, log=False):
     # others will be blocky. So to avoid this we build up cumulative TH1s and
     # then draw those ontop of the main block colours. (5.34.21 MacOSX w/Cocoa)
     shape = r.THStack("shape","")
-    error_hists = None
+    error_hists_stat = None
+    error_hists_stat_syst = None
 
     leg = make_legend()
     leg.AddEntry(hist_data_signal, "Data + stat. error", "pl")
@@ -287,36 +305,63 @@ def make_plot(var, njet, btag, htbins, rebin=2, log=False):
         shape.Add(h)
 
         # copies for stat/syst error bars
-        if not error_hists:
+        if not error_hists_stat:
             h_stat = h.Clone()
             style_hist_err1(h_stat, h.GetName())
-            error_hists = [h_stat]
+            error_hists_stat = [h_stat]
+
+            h_syst = h.Clone()
+            style_hist_err2(h_syst, h.GetName())
+            set_syst_errors(h_syst, njet, htbins)
+            error_hists_stat_syst = [h_syst]
         else:
-            h_stat = error_hists[-1].Clone()
+            h_stat = error_hists_stat[-1].Clone()
             h_stat.Add(h)
             style_hist_err1(h_stat, h.GetName())
-            error_hists.append(h_stat)
+            error_hists_stat.append(h_stat)
+
+            h_syst = error_hists_stat_syst[-1].Clone()
+            h_syst.Add(h)
+            style_hist_err2(h_syst, h.GetName())
+            set_syst_errors(h_syst, njet, htbins)
+            error_hists_stat_syst.append(h_syst)
 
     # reverse sort to add entries to the legend
-    # for h in sorted(component_hists, key=lambda hist: 1./hist.Integral()):
     for h in reversed(component_hists):
         leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
-    leg.AddEntry(error_hists[-1], "BG Stat. error", "F")
+    leg.AddEntry(error_hists_stat[-1], "Stat. error", "F")
+    leg.AddEntry(error_hists_stat_syst[-1], "Stat. + syst. error", "F")
 
     # Finally draw all the pieces
     c = r.TCanvas()
-    # if log:
     c.SetLogy(log)
     c.SetTicks()
-    if hist_data_signal.GetMaximum() > error_hists[-1].GetMaximum():
+
+    # Urgh trying to set y axis maximum correctly is a massive ball ache,
+    # since THstack doesn't account for error properly
+    sum = shape.GetStack().Last() # the "sum" of component hists
+    max_stack = sum.GetMaximum()+sum.GetBinError(sum.GetMaximumBin())
+    max_data = hist_data_signal.GetMaximum()+hist_data_signal.GetBinError(hist_data_signal.GetMaximumBin())
+    print max_stack
+    print max_data
+
+    if max_stack > max_data:
+        shape.Draw("HIST")
+        if log:
+            shape.SetMaximum(max_stack*5.)
+        else:
+            shape.SetMaximum(max_stack*1.1)
+        shape.Draw("HIST")
+        hist_data_signal.Draw("SAME")
+    else:
         hist_data_signal.Draw()
         shape.Draw("HIST SAME")
-    else:
-        shape.Draw("HIST")
-    [h.Draw("E2 SAME") for h in error_hists]
+        hist_data_signal.Draw("SAME")
+
+    [h.Draw("E2 SAME") for h in error_hists_stat]
+    [h.Draw("E2 SAME") for h in error_hists_stat_syst]
     title_axes(hist_data_signal, var, "Events")
     title_axes(shape.GetHistogram(), var, "Events")
-    hist_data_signal.Draw("ESAME")
     leg.Draw("SAME")
     stdtxt = make_standard_text()
     stdtxt.Draw("SAME")
@@ -338,7 +383,8 @@ def make_plot_bins(var):
     #         else:
     #             rebin = 2
     #         make_plot(v, njet, btag, ht_bins, rebin, log=true)
-    make_plot("LeadJetEta", "le3j", "eq0b", "475_575", rebin=2, log=False)
+    make_plot("LeadJetEta", "le3j", "eq0b", "475_575", rebin=2, log=True)
+    # make_plot("SecondJetPt", "le3j", "eq0b", "475_575", rebin=2, log=False)
 
 
 if __name__ == "__main__":
