@@ -26,6 +26,7 @@ r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 
+# input files
 ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/"
 
 # Variable(s) you want to plot
@@ -74,8 +75,8 @@ class Ratio_Plot():
         self.njet = njet
         self.btag = btag
         self.htbins = htbins
-        self.rebin = rebin #hmm get rid of these?
-        self.log = log # ditto
+        self.rebin = rebin
+        self.log = log
         self.c = r.TCanvas()
         self.up = r.TPad("u","",0.01,0.25,0.99,0.99)
         self.dp = r.TPad("d","",0.01,0.01,0.99,0.25)
@@ -89,8 +90,8 @@ class Ratio_Plot():
         self.stdtxt = self.make_standard_text()
         self.cuttxt = self.make_bin_text()
         self.leg = self.make_legend()
-
         self.c.cd()
+
         # Now make plots
         self.make_hists()
         self.make_main_plot(self.up)
@@ -164,6 +165,7 @@ class Ratio_Plot():
         # hist.SetMarkerSize(2)
         hist.SetMarkerStyle(20)
         hist.SetLineColor(r.kBlack)
+        hist.GetYaxis().SetTitle("Data/MC")
         ratioY = self.up.GetAbsHNDC() / self.dp.GetAbsHNDC()
         # ratioX = self.up.GetAbsVNDC() / self.dp.GetAbsVNDC()
         # apparently hist.GetYaxis().Set... doesn't really work here?
@@ -172,12 +174,14 @@ class Ratio_Plot():
         hist.SetTitleOffset(hist.GetYaxis().GetTitleOffset()/ratioY, "Y")
         hist.SetLabelOffset(hist.GetYaxis().GetLabelOffset()*ratioY, "Y")
         hist.GetYaxis().SetNdivisions(6+(100*6))
+        hist.GetYaxis().SetRangeUser(0, 2.0)
 
         hist.SetTitleSize(hist.GetXaxis().GetTitleSize()*ratioY, "X")
         hist.SetLabelSize(hist.GetXaxis().GetLabelSize()*ratioY, "X")
         # hist.SetTitleOffset(hist.GetXaxis().GetTitleOffset()/ratioY, "X")
         hist.SetTitleOffset(9999, "X")
         hist.SetLabelOffset(hist.GetXaxis().GetLabelOffset()*ratioY, "X")
+        hist.GetXaxis().SetTickLength(hist.GetXaxis().GetTickLength()*ratioY)
 
 
     def title_axes(self, hist, xtitle, ytitle="Events"):
@@ -352,9 +356,6 @@ class Ratio_Plot():
         """
         pad.Draw()
         pad.cd()
-        # Get our data & BG shapes & TFs
-        # make_hists(self.var, self.njet, self.btag, self.htbins)
-
 
         # Make stack of backgrounds, and put error bands on each contribution:
         # There is a ROOT bug whereby if you try and make copies of the hists,
@@ -429,7 +430,6 @@ class Ratio_Plot():
             self.hist_data_signal.Draw("SAME")
 
         self.hist_data_signal.Draw("SAME")
-        self.c.SaveAs("test.pdf")
 
         [h.Draw("E2 SAME") for h in self.error_hists_stat]
         [h.Draw("E2 SAME") for h in self.error_hists_stat_syst]
@@ -458,10 +458,9 @@ class Ratio_Plot():
         # for i in range(1,self.hist_ratio.GetNbinsX()+1):
         #     print self.hist_ratio.GetBinContent(i)
 
-        self.hist_ratio.GetYaxis().SetTitle("Data/MC")
         self.style_hist_ratio(self.hist_ratio)
-
         self.hist_ratio.Draw("EP")
+
 
         self.l = r.TLine(self.hist_ratio.GetXaxis().GetXmin(), 1, self.hist_ratio.GetXaxis().GetXmax() , 1)
         self.l.SetLineWidth(2)
@@ -475,28 +474,25 @@ def make_plot_bins(var):
     For a given variable, makes data VS background plots for all the
     relevant HT, Njets, Nbtag bins
     """
-    # for v in var:
-    #     print "Doing plots for", v
+    for v in var:
+        print "Doing plots for", v
     #     # for njet, btag, ht_bins in product(n_j, n_b, HTbins):
-    #     rebin = 2
-    #     if v in ["Number_Btags", "JetMultiplicity"]:
-    #         rebin = 1
-    #     elif v in ['AlphaT', 'ComMinBiasDPhi']:
-    #         rebin = 10
+        rebin = 2
+        if v in ["Number_Btags", "JetMultiplicity"]:
+            rebin = 1
+        elif v in ['AlphaT', 'ComMinBiasDPhi']:
+            rebin = 10
 
-    #     log = False
-    #     if v in ["ComMinBiasDPhi", "AlphaT"]:
-    #         log = True
-    #         # make_plot(v, njet, btag, ht_bins, rebin, log)
-    #         # make_plot(v, "le3j", "eq0b", "375_475", rebin, log)
+        log = False
+        if v in ["ComMinBiasDPhi", "AlphaT", "HT"]:
+            log = True
 
-    #     plot = Ratio_Plot(v, "le3j", "eq0b", "375_475", rebin, log)
-    plot = Ratio_Plot("LeadJetEta", "le3j", "eq0b", "375_475", 2, False)
-    plot.save()
-        # make_plot(v, "le3j", "eq0b", "375_475", rebin, log)
-    # make_plot("LeadJetEta", "le3j", "eq0b", "475_575", rebin=2, log=False)
-    # make_plot("SecondJetPt", "le3j", "eq0b", "375_475", rebin=2, log=False)
-    # make_plot("SecondJetPt", "le3j", "eq2b", "475_575", rebin=2, log=False)
+        plot = Ratio_Plot(v, "le3j", "eq0b", "375_475", rebin, log)
+        plot.save()
+
+    # For testing
+    # plot = Ratio_Plot("LeadJetEta", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
 
 
 if __name__ == "__main__":
