@@ -32,7 +32,7 @@ ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/"
 # Variable(s) you want to plot
 # "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
 plot_vars = ["AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
-             "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected", "MET",
+             "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected", "ComMinBiasDPhi",
              "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass", "Number_Btags", "Number_Good_verticies"]
 
 # Where you want to store plots
@@ -238,6 +238,48 @@ class Ratio_Plot():
         return t
 
 
+    def autorange_xaxis(self, h_1, h_2):
+        """
+        Return x axis range such that only filled bins are shown,
+        for both h_1 and h_2.
+        Plus a bit of padding on the left, and a lot more on the right
+        """
+        # store values that mark edge of contents
+        low_1 = -1000000.
+        low_2 = -1000000.
+        high_1 = 1000000.
+        high_2 = 1000000.
+
+        prev_1 = 0.
+        prev_2 = 0.
+
+        found_low_1 = False
+        found_low_2 = False
+
+        for i in range(1, 1 + h_1.GetNbinsX()):
+            if not found_low_1 and not prev_1 and h_1.GetBinContent(i) > 0:
+                low_1 = h_1.GetBinLowEdge(i)
+                prev_1 = h_1.GetBinContent(i)
+                found_low_1 = True
+            if not found_low_2 and not prev_2 and h_2.GetBinContent(i) > 0:
+                low_2 = h_2.GetBinLowEdge(i)
+                prev_2 = h_2.GetBinContent(i)
+                found_low_2 = True
+            if prev_1 and not h_1.GetBinContent(i):
+                high_1 = h_1.GetBinLowEdge(i+1)
+                prev_1 = h_1.GetBinContent(i)
+            if prev_2 and not h_2.GetBinContent(i):
+                high_2 = h_2.GetBinLowEdge(i+1)
+                prev_2 = h_2.GetBinContent(i)
+
+        xmin = low_1 if low_1 < low_2 else low_2
+        xmax = high_1 if high_1 > low_2 else high_2
+        # xmin -= (2*h_1.GetBinWidth(1))
+        xmax += 0.5*(xmax-xmin)
+        print xmin, xmax
+        return xmin, xmax
+
+
     def set_syst_errors(self, h):
         """
         Turns stat errors into stat+syst errors using LUT at top
@@ -277,6 +319,7 @@ class Ratio_Plot():
             hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (ROOTdir, f_start),
                                                  sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=self.htbins)
             hist_data_control.SetName(ctrl)  # for styling later
+            print "Data in control reigon:", hist_data_control.Integral()
 
             # MC in signal region
             if "0" in self.btag or "1" in self.btag:
@@ -295,6 +338,7 @@ class Ratio_Plot():
                 else:
                     hist_mc_signal.Add(MC_signal_tmp)
 
+            print "Total:", hist_mc_signal.Integral()
 
             # MC in control region
             print "MC in control region:"
@@ -308,43 +352,44 @@ class Ratio_Plot():
                 else:
                     hist_mc_control.Add(MC_ctrl_tmp)
 
+            print "Total:", hist_mc_control.Integral()
 
-            mc_signal_err = r.Double(-1.)
-            mc_signal_integral = hist_mc_signal.IntegralAndError(1, hist_mc_signal.GetNbinsX(), mc_signal_err)
-            mc_control_err = r.Double(-1.)
-            mc_control_integral = hist_mc_control.IntegralAndError(1, hist_mc_control.GetNbinsX(), mc_control_err)
-            data_control_err = r.Double(-1.)
-            data_control_integral = hist_data_control.IntegralAndError(1, hist_data_control.GetNbinsX(), data_control_err)
+            # mc_signal_err = r.Double(-1.)
+            # mc_signal_integral = hist_mc_signal.IntegralAndError(1, hist_mc_signal.GetNbinsX(), mc_signal_err)
+            # mc_control_err = r.Double(-1.)
+            # mc_control_integral = hist_mc_control.IntegralAndError(1, hist_mc_control.GetNbinsX(), mc_control_err)
+            # data_control_err = r.Double(-1.)
+            # data_control_integral = hist_data_control.IntegralAndError(1, hist_data_control.GetNbinsX(), data_control_err)
 
-            print ctrl
-            print "Data control: %.3f +/- %.3f" % (data_control_integral, data_control_err)
-            print "MC signal: %.3f +/- %.3f" % (mc_signal_integral, mc_signal_err)
-            print "MC control: %.3f +/- %.3f" % (mc_control_integral, mc_control_err)
+            # print ctrl
+            # print "Data control: %.3f +/- %.3f" % (data_control_integral, data_control_err)
+            # print "MC signal: %.3f +/- %.3f" % (mc_signal_integral, mc_signal_err)
+            # print "MC control: %.3f +/- %.3f" % (mc_control_integral, mc_control_err)
 
             # Divide, multiply, and add to total shape
             # ROOT's Multiply()/Divide() are bin-by-bin. To propagate the errors,
             # we need copies of the hists we want to multiply/divide, with ALL bins
             # set to Integral +/- (Error on Integral)
-            hist_mc_signal_factor = hist_mc_signal.Clone()
-            hist_mc_control_factor = hist_mc_control.Clone()
+            # hist_mc_signal_factor = hist_mc_signal.Clone()
+            # hist_mc_control_factor = hist_mc_control.Clone()
 
-            for i in range(1, 1 + hist_mc_signal_factor.GetNbinsX()):
-                hist_mc_signal_factor.SetBinContent(i, mc_signal_integral)
-                hist_mc_signal_factor.SetBinError(i, mc_signal_err)
-                hist_mc_control_factor.SetBinContent(i, mc_control_integral)
-                hist_mc_control_factor.SetBinError(i, mc_control_err)
+            # for i in range(1, 1 + hist_mc_signal_factor.GetNbinsX()):
+            #     hist_mc_signal_factor.SetBinContent(i, mc_signal_integral)
+            #     hist_mc_signal_factor.SetBinError(i, mc_signal_err)
+            #     hist_mc_control_factor.SetBinContent(i, mc_control_integral)
+            #     hist_mc_control_factor.SetBinError(i, mc_control_err)
 
-            hist_mc_signal_factor.Divide(hist_mc_control_factor)
-            hist_data_control.Multiply(hist_mc_signal_factor)
-            print "Transfer Factor for %s: %.3f +/- %.3f" % (ctrl, hist_mc_signal_factor.GetBinContent(1), hist_mc_signal_factor.GetBinError(1))
+            # hist_mc_signal_factor.Divide(hist_mc_control_factor)
+            hist_data_control.Multiply(hist_mc_signal)
+            hist_data_control.Divide(hist_mc_control)
+            # print "Transfer Factor for %s: %.3f +/- %.3f" % (ctrl, hist_mc_signal_factor.GetBinContent(1), hist_mc_signal_factor.GetBinError(1))
             self.component_hists.append(hist_data_control)
-            self.transfer_factors[ctrl] = hist_mc_signal_factor.GetBinContent(1)
-            print ctrl, "estimate:", hist_data_control.Integral()
+            # self.transfer_factors[ctrl] = hist_mc_signal_factor.GetBinContent(1)
+            print ctrl, "Estimate:", hist_data_control.Integral()
 
         # Get data hist
         self.hist_data_signal = grabr.grab_plots(f_path="%s/Had_Data.root" % ROOTdir,
                                             sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=self.htbins)
-        self.style_hist(self.hist_data_signal, "Data")
 
         print "Data SR:", self.hist_data_signal.Integral()
 
@@ -356,6 +401,8 @@ class Ratio_Plot():
         """
         pad.Draw()
         pad.cd()
+
+        self.style_hist(self.hist_data_signal, "Data")
 
         # Make stack of backgrounds, and put error bands on each contribution:
         # There is a ROOT bug whereby if you try and make copies of the hists,
@@ -373,7 +420,7 @@ class Ratio_Plot():
         for h in self.component_hists:
             # Some shimmer BEFORE adding to stack
             self.style_hist(h, h.GetName())
-            self.shape_stack.Add(h.Clone())
+            self.shape_stack.Add(h)
             # copies for stat/syst error bars
             if not self.error_hists_stat:
                 h_stat = h.Clone()
@@ -409,15 +456,22 @@ class Ratio_Plot():
         pad.SetLogy(self.log)
         pad.SetTicks()
 
+
         # Urgh trying to set y axis maximum correctly is a massive ball ache,
         # since THStack doesn't account for error properly (that's now 2 ROOT bugs)
         sum = self.shape_stack.GetStack().Last()  # the "sum" of component hists
-        max_stack = sum.GetMaximum() + sum.GetBinError(sum.GetMaximumBin())
+        max_stack = sum.GetMaximum() + self.error_hists_stat_syst[-1].GetBinError(sum.GetMaximumBin())
         max_data = self.hist_data_signal.GetMaximum() + \
                    self.hist_data_signal.GetBinError(self.hist_data_signal.GetMaximumBin())
+        print max_stack, max_data
+
+        # Get x range - but can only set it for the stack once you've drawn it (fail)
+        xmin, xmax = self.autorange_xaxis(self.hist_data_signal, self.shape_stack.GetStack().Last())
+        self.hist_data_signal.SetAxisRange(xmin, xmax, "X")
 
         if max_stack > max_data:
             self.shape_stack.Draw("HIST")
+            self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
             if self.log:
                 self.shape_stack.SetMaximum(max_stack * 5.)
             else:
@@ -427,10 +481,15 @@ class Ratio_Plot():
         else:
             self.hist_data_signal.Draw()
             self.shape_stack.Draw("HIST SAME")
+            self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
             self.hist_data_signal.Draw("SAME")
 
         self.hist_data_signal.Draw("SAME")
 
+        [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat]
+        [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat_syst]
+        print self.error_hists_stat_syst[-1].GetXaxis().GetXmin()
+        print self.error_hists_stat_syst[-1].GetXaxis().GetXmax()
         [h.Draw("E2 SAME") for h in self.error_hists_stat]
         [h.Draw("E2 SAME") for h in self.error_hists_stat_syst]
         pad.RedrawAxis()  # important to put axis on top of all plots
@@ -439,9 +498,6 @@ class Ratio_Plot():
         self.leg.Draw()
         self.stdtxt.Draw("SAME")
         self.cuttxt.Draw("SAME")
-
-        # if save:
-        #     c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (out_dir, out_stem, var, njet, btag, htbins))
 
 
     def make_ratio_plot(self, pad, h_data, h_mc):
@@ -460,13 +516,20 @@ class Ratio_Plot():
 
         self.style_hist_ratio(self.hist_ratio)
         self.hist_ratio.Draw("EP")
-
-
-        self.l = r.TLine(self.hist_ratio.GetXaxis().GetXmin(), 1, self.hist_ratio.GetXaxis().GetXmax() , 1)
+        r.gPad.Update();
+        min = self.hist_ratio.GetXaxis().GetXmin() # NOPE DOESN'T WORK
+        max = self.hist_ratio.GetXaxis().GetXmax()
+        xmin, xmax = self.autorange_xaxis(h_data, h_mc)
+        # For some unbelievably fucking stupid reason, I have to use
+        # gPad.GetUxmax for upper edge, but xmin for lower edge as
+        # gPad.GetUxmin mis reports it
+        # And GetXaxis.GetMax/Min doesn't even work, it ignores the fact
+        # I've told it to change range
+        # Stupid piece of shit
+        self.l = r.TLine(xmin, 1, r.gPad.GetUxmax(), 1)
         self.l.SetLineWidth(2)
         self.l.SetLineStyle(2)
         self.l.Draw()
-
 
 
 def make_plot_bins(var):
@@ -480,11 +543,11 @@ def make_plot_bins(var):
         rebin = 2
         if v in ["Number_Btags", "JetMultiplicity"]:
             rebin = 1
-        elif v in ['AlphaT', 'ComMinBiasDPhi']:
+        elif v in ['AlphaT', 'ComMinBiasDPhi', 'ComMinBiasDPhi_acceptedJets']:
             rebin = 10
 
         log = False
-        if v in ["ComMinBiasDPhi", "AlphaT", "HT"]:
+        if v in ["ComMinBiasDPhi", "ComMinBiasDPhi_acceptedJets", "AlphaT", "HT"]:
             log = True
 
         plot = Ratio_Plot(v, "le3j", "eq0b", "375_475", rebin, log)
