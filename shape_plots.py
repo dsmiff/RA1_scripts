@@ -32,7 +32,7 @@ ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/"
 # Variable(s) you want to plot
 # "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
 plot_vars = ["AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
-             "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected", "ComMinBiasDPhi",
+             "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
              "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass", "Number_Btags", "Number_Good_verticies"]
 
 # Where you want to store plots
@@ -274,8 +274,8 @@ class Ratio_Plot():
 
         xmin = low_1 if low_1 < low_2 else low_2
         xmax = high_1 if high_1 > low_2 else high_2
-        # xmin -= (2*h_1.GetBinWidth(1))
-        xmax += 0.5*(xmax-xmin)
+        # xmin -= (2*h_1.GetBinWidth(1))  # add little bit of padding to LHS
+        xmax += 0.6*(xmax-xmin)  # add some space to RHS
         print xmin, xmax
         return xmin, xmax
 
@@ -472,10 +472,13 @@ class Ratio_Plot():
         if max_stack > max_data:
             self.shape_stack.Draw("HIST")
             self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
+            r.gPad.Update();
+            ymin = r.gPad.GetUymin()
             if self.log:
                 self.shape_stack.SetMaximum(max_stack * 5.)
             else:
                 self.shape_stack.SetMaximum(max_stack * 1.1)
+            self.shape_stack.SetMinimum(ymin)
             self.shape_stack.Draw("HIST")
             self.hist_data_signal.Draw("SAME")
         else:
@@ -488,8 +491,6 @@ class Ratio_Plot():
 
         [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat]
         [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat_syst]
-        print self.error_hists_stat_syst[-1].GetXaxis().GetXmin()
-        print self.error_hists_stat_syst[-1].GetXaxis().GetXmax()
         [h.Draw("E2 SAME") for h in self.error_hists_stat]
         [h.Draw("E2 SAME") for h in self.error_hists_stat_syst]
         pad.RedrawAxis()  # important to put axis on top of all plots
@@ -510,10 +511,6 @@ class Ratio_Plot():
 
         self.hist_ratio = h_data.Clone("ratio")
         self.hist_ratio.Divide(h_mc.Clone())
-
-        # for i in range(1,self.hist_ratio.GetNbinsX()+1):
-        #     print self.hist_ratio.GetBinContent(i)
-
         self.style_hist_ratio(self.hist_ratio)
         self.hist_ratio.Draw("EP")
         r.gPad.Update();
