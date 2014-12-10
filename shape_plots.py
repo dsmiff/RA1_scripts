@@ -275,7 +275,7 @@ class Ratio_Plot():
         xmin = low_1 if low_1 < low_2 else low_2
         xmax = high_1 if high_1 > low_2 else high_2
         # xmin -= (2*h_1.GetBinWidth(1))  # add little bit of padding to LHS
-        xmax += 0.6*(xmax-xmin)  # add some space to RHS
+        xmax += 0.4 * (xmax-xmin)  # add some space to RHS
         print xmin, xmax
         return xmin, xmax
 
@@ -478,7 +478,7 @@ class Ratio_Plot():
                 self.shape_stack.SetMaximum(max_stack * 5.)
             else:
                 self.shape_stack.SetMaximum(max_stack * 1.1)
-            self.shape_stack.SetMinimum(ymin)
+            self.shape_stack.SetMinimum(ymin)  # setting maximum somehow FUs min - do manually
             self.shape_stack.Draw("HIST")
             self.hist_data_signal.Draw("SAME")
         else:
