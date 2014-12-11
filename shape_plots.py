@@ -476,6 +476,7 @@ class Ratio_Plot():
             ymin = r.gPad.GetUymin()
             if self.log:
                 self.shape_stack.SetMaximum(max_stack * 5.)
+                if (ymin <= 0.): ymin = 0.001
             else:
                 self.shape_stack.SetMaximum(max_stack * 1.1)
             self.shape_stack.SetMinimum(ymin)  # setting maximum somehow FUs min - do manually
