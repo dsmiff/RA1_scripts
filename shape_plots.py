@@ -471,7 +471,7 @@ class Ratio_Plot():
         self.cuttxt.Draw("SAME")
 
 
-    def make_ratio_plot(self, pad, h_data, h_mc):
+    def make_ratio_plot(self, pad, h_data, h_mc, fit=True):
         """
         Makes the little data/MC ratio plot
         """
@@ -493,10 +493,19 @@ class Ratio_Plot():
         # And GetXaxis.GetMax/Min doesn't even work, it ignores the fact
         # I've told it to change range
         # Stupid piece of shit
-        self.l = r.TLine(xmin, 1, r.gPad.GetUxmax(), 1)
+        xmax = r.gPad.GetUxmax()
+        self.l = r.TLine(xmin, 1, xmax, 1)
         self.l.SetLineWidth(2)
         self.l.SetLineStyle(2)
         self.l.Draw()
+
+        # Do fit to ratio
+        # if (fit):
+        #     fitfn = r.TF1("fitfn", "[0]", xmin, xmax)
+        #     fitfn.SetParameter(0, 1.)
+        #     fitfn.SetParLimits(0, 0., 100.)
+        #     fitfn.SetLineColor(r.kBlue)
+            # result = self.hist_ratio.Fit("fitfn")
 
 
 def make_plot_bins(var):
@@ -508,12 +517,11 @@ def make_plot_bins(var):
         print "Doing plots for", v
     #     # for njet, btag, ht_bins in product(n_j, n_b, HTbins):
         rebin = 2
-        if v in ["Number_Btags", "JetMultiplicity", "MHTovMET"]:
-            rebin = 1
-        elif v in ['ComMinBiasDPhi_acceptedJets']:
-            rebin = 10
-        elif v in ['AlphaT', 'ComMinBiasDPhi', 'ComMinBiasDPhi_acceptedJets']:
-            rebin = 10
+        rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
+                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 10,
+                    "MET_Corrected": 4}
+        if v in rebin_d:
+            rebin = rebin_d[v]
 
         log = False
         if v in ["ComMinBiasDPhi", "ComMinBiasDPhi_acceptedJets", "AlphaT", "HT"]:
