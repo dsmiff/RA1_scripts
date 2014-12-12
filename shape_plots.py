@@ -46,6 +46,7 @@ out_dir = "./11Dec_aT_0p53_forRobin_v0/" # re-run
 out_stem = "plot"
 
 # Define region bins
+# CURRENTLY OVERRIDEN IN make_plots METHOD
 HTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
           "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"][3:]
 ht_scheme = ["incl", "excl"][0]  # option for individual bin, or inclusive
@@ -80,6 +81,7 @@ class Ratio_Plot():
         self.njet = njet
         self.btag = btag
         self.htbins = htbins
+        self.htstring = htbins[0].split("_")[0] + "_" + htbins[-1].split("_")[-1]
         self.rebin = rebin
         self.log = log
         self.c = r.TCanvas()
@@ -112,7 +114,7 @@ class Ratio_Plot():
             opath = os.path.abspath(out_dir)
             if not os.path.isdir(opath):
                 os.makedirs(opath)
-            self.c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (out_dir, out_stem, self.var, self.njet, self.btag, self.htbins))
+            self.c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (out_dir, out_stem, self.var, self.njet, self.btag, self.htstring))
         else:
             self.c.SaveAs(name)
 
@@ -237,7 +239,7 @@ class Ratio_Plot():
         """
         t = r.TPaveText(0.1, 0.91, 0.5, 0.95, "NDC")
         b_str = grabr.btag_string(self.btag) if grabr.btag_string(self.btag) else "geq 0 btag"
-        tt = t.AddText("%s, %s, HT bin %s" % (self.njet, b_str, self.htbins))
+        tt = t.AddText("%s, %s, HT bin %s" % (self.njet, b_str, self.htstring))
         tt.SetTextAlign(12)
         t.SetFillColor(0)
         t.SetFillStyle(0)
@@ -294,7 +296,8 @@ class Ratio_Plot():
         Turns stat errors into stat+syst errors using LUT at top
         """
         for i in range(1, h.GetNbinsX() + 1):
-            syst =  h.GetBinContent(i) * tf_systs[self.njet][self.htbins] / 100.
+            # syst =  h.GetBinContent(i) * tf_systs[self.njet][self.htbins] / 100.
+            syst = 0
             err = np.hypot(h.GetBinError(i), syst)
             h.SetBinError(i, err)
 
@@ -321,8 +324,6 @@ class Ratio_Plot():
                 f_start = "Muon"
             elif "Photon" in ctrl:
                 f_start = "Photon"
-            # else:
-                # f_start = "Had"
 
             # Data in control region:
             hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (ROOTdir, f_start),
@@ -353,9 +354,10 @@ class Ratio_Plot():
             print "MC in control region:"
             hist_mc_control = None
             for p in processes_mc_ctrl:
+                print p
                 MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (ROOTdir, f_start, p),
                                                sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=self.htbins)
-                print p, MC_ctrl_tmp.Integral()
+                # print p, MC_ctrl_tmp.Integral()
                 if not hist_mc_control:
                     hist_mc_control = MC_ctrl_tmp.Clone()
                 else:
@@ -531,24 +533,58 @@ def make_plot_bins(var):
     """
     for v in var:
         print "Doing plots for", v
-    #     # for njet, btag, ht_bins in product(n_j, n_b, HTbins):
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 10,
-                    "MET_Corrected": 4}
+                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 20,
+                    "MET_Corrected": 4, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4}
         if v in rebin_d:
             rebin = rebin_d[v]
 
         log = False
-        if v in ["ComMinBiasDPhi", "ComMinBiasDPhi_acceptedJets", "AlphaT", "HT"]:
+        if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
 
-        plot = Ratio_Plot(v, "le3j", "eq0b", "375_475", rebin, log)
-        # plot = Ratio_Plot(v, "ge4j", "eq0b", "475_575", rebin, log)
+        # plot = Ratio_Plot(v, "le3j", "eq0b", ["375_475"], rebin, log)
+        # plot.save()
+
+    # For ge4j cos the binning is diff in cases...
+    for v in var:
+        print "Doing plots for", v
+        rebin = 2
+        rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
+                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 10,
+                    "MET_Corrected": 4, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4,
+                    "MHT": 4}
+        if v in rebin_d:
+            rebin = rebin_d[v]
+
+        log = False
+        if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
+            log = True
+        # plot = Ratio_Plot(v, "ge4j", "eq0b", ["375_475"], rebin, log)
+        # plot.save()
+
+    # For inclusive HT
+    for v in var:
+        print "Doing plots for", v
+        rebin = 2
+        rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
+                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 20,
+                    "MET_Corrected": 4, "HT": 10, "SecondJetPt": 4, "EffectiveMass": 4,
+                    "MHT": 4}
+        if v in rebin_d:
+            rebin = rebin_d[v]
+
+        log = False
+        if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]:
+            log = True
+        plot = Ratio_Plot(v, "le3j", "eq0b", HTbins, rebin, log)
         plot.save()
-    # plot = Ratio_Plot("AlphaT", "le3j", "eq0b", "375_475", 2, False)
+
+    # Testing
+    # plot = Ratio_Plot("AlphaT", "le3j", "eq0b", "375_475", 20, True)
     # plot.save()
-    # plot = Ratio_Plot("JetMultiplicity", "le3j", "eq0b", "375_475", 2, False)
+    # plot = Ratio_Plot("JetMultiplicity", "le3j", "eq0b", "375_475", 1, False)
     # plot.save()
     # plot = Ratio_Plot("LeadJetPt", "le3j", "eq0b", "375_475", 2, False)
     # plot.save()
@@ -564,7 +600,7 @@ def make_plot_bins(var):
     # plot.save()
     # plot = Ratio_Plot("MET_Corrected", "le3j", "eq0b", "375_475", 2, False)
     # plot.save()
-    # plot = Ratio_Plot("MHTovMET", "le3j", "eq0b", "375_475", 2, False)
+    # plot = Ratio_Plot("MHTovMET", "ge4j", "eq0b", "375_475", 2, True)
     # plot.save()
     # plot = Ratio_Plot("ComMinBiasDPhi_acceptedJets", "le3j", "eq0b", "375_475", 2, False)
     # plot.save()
