@@ -27,7 +27,7 @@ r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 
 # input files
-# ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/" # original
+# ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/" # original buggy
 ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/"  # re-run
 # ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1" #alphaT in muon regions
 
@@ -39,7 +39,7 @@ plot_vars = ["AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
 
 # Where you want to store plots
 # And what you want to call the plots - will be out_dir/out_stem_<var>_<njet>_<btag>_<htbin>.pdf
-# out_dir = "./28Nov_aT_0p53_v1/" # original
+# out_dir = "./28Nov_aT_0p53_v1/" # original buggy
 out_dir = "./11Dec_aT_0p53_forRobin_v0/" # re-run
 # out_dir = "./01Dec_aT_0p53_globalAlphaT_v1/" # alphaT in muon regions
 
@@ -81,7 +81,7 @@ class Ratio_Plot():
         self.njet = njet
         self.btag = btag
         self.htbins = htbins
-        self.htstring = htbins[0].split("_")[0] + "_" + htbins[-1].split("_")[-1]
+        self.htstring = self.make_ht_string(htbins)
         self.rebin = rebin
         self.log = log
         self.c = r.TCanvas()
@@ -105,6 +105,15 @@ class Ratio_Plot():
         self.c.cd()
         self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1])
         self.c.cd()
+
+
+    def make_ht_string(self, htbins):
+        htstring = htbins[0].split("_")[0] + "_"
+        if (htbins[-1] != "1075"):
+            htstring += htbins[-1].split("_")[-1]
+        else:
+            htstring += "Inf"
+        return htstring
 
 
     def save(self, name=None):
@@ -570,8 +579,8 @@ def make_plot_bins(var):
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
                     "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 20,
-                    "MET_Corrected": 4, "HT": 10, "SecondJetPt": 4, "EffectiveMass": 4,
-                    "MHT": 4}
+                    "MET_Corrected": 4, "HT": 10, "SecondJetPt": 4, "EffectiveMass": 10,
+                    "MHT": 4, "LeadJetPt": 4}
         if v in rebin_d:
             rebin = rebin_d[v]
 
