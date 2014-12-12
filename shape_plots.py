@@ -19,7 +19,7 @@ import ROOT as r
 from itertools import product, izip
 import math
 import numpy as np
-
+import os
 
 r.TH1.SetDefaultSumw2(True)
 r.gStyle.SetOptStat(0)
@@ -27,7 +27,9 @@ r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 
 # input files
-ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/"
+# ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/" # original
+ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/"  # re-run
+# ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1" #alphaT in muon regions
 
 # Variable(s) you want to plot
 # "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
@@ -37,7 +39,10 @@ plot_vars = ["AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
 
 # Where you want to store plots
 # And what you want to call the plots - will be out_dir/out_stem_<var>_<njet>_<btag>_<htbin>.pdf
-out_dir = "."
+# out_dir = "./28Nov_aT_0p53_v1/" # original
+out_dir = "./11Dec_aT_0p53_forRobin_v0/" # re-run
+# out_dir = "./01Dec_aT_0p53_globalAlphaT_v1/" # alphaT in muon regions
+
 out_stem = "plot"
 
 # Define region bins
@@ -103,6 +108,10 @@ class Ratio_Plot():
     def save(self, name=None):
         self.c.cd()
         if not name:
+            # check outdir exists
+            opath = os.path.abspath(out_dir)
+            if not os.path.isdir(opath):
+                os.makedirs(opath)
             self.c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (out_dir, out_stem, self.var, self.njet, self.btag, self.htbins))
         else:
             self.c.SaveAs(name)
@@ -434,10 +443,9 @@ class Ratio_Plot():
 
         # Urgh trying to set y axis maximum correctly is a massive ball ache,
         # since THStack doesn't account for error properly (that's now 2 ROOT bugs)
-        sum = self.shape_stack.GetStack().Last()  # the "sum" of component hists
-        max_stack = sum.GetMaximum() + self.error_hists_stat_syst[-1].GetBinError(sum.GetMaximumBin())
-        max_data = self.hist_data_signal.GetMaximum() + \
-                   self.hist_data_signal.GetBinError(self.hist_data_signal.GetMaximumBin())
+        sum_stack = self.shape_stack.GetStack().Last()  # the "sum" of component hists
+        max_stack = sum_stack.GetMaximum() + sum_stack.GetBinError(sum_stack.GetMaximumBin())
+        max_data = self.hist_data_signal.GetMaximum() + self.hist_data_signal.GetBinError(self.hist_data_signal.GetMaximumBin())
 
         if max_stack > max_data:
             self.shape_stack.Draw("HIST")
@@ -499,13 +507,16 @@ class Ratio_Plot():
         self.l.SetLineStyle(2)
         self.l.Draw()
 
+        # for i in range(1, 1+self.hist_ratio.GetNbinsX()):
+        #     print i, self.hist_ratio.GetBinCenter(i), ",", self.hist_ratio.GetBinContent(i)
+
         # Do fit to ratio
         # if (fit):
-        #     fitfn = r.TF1("fitfn", "[0]", xmin, xmax)
+        #     fitfn = r.TF1("fitfn", "[0]")
         #     fitfn.SetParameter(0, 1.)
         #     fitfn.SetParLimits(0, 0., 100.)
         #     fitfn.SetLineColor(r.kBlue)
-            # result = self.hist_ratio.Fit("fitfn")
+        #     result = self.hist_ratio.Fit("fitfn", "+")
 
 
 def make_plot_bins(var):
@@ -530,9 +541,41 @@ def make_plot_bins(var):
         plot = Ratio_Plot(v, "le3j", "eq0b", "375_475", rebin, log)
         # plot = Ratio_Plot(v, "ge4j", "eq0b", "475_575", rebin, log)
         plot.save()
+    # plot = Ratio_Plot("AlphaT", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("JetMultiplicity", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("LeadJetPt", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("SecondJetPt", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("HT", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("SecondJetEta", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("LeadJetEta", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("MHT", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("MET_Corrected", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("MHTovMET", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("ComMinBiasDPhi_acceptedJets", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("EffectiveMass", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("Number_Btags", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("Number_Good_verticies", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
 
     # For testing
-    # plot = Ratio_Plot("AlphaT", "ge4j", "eq0b", "475_575", 10, True)
+    # plot = Ratio_Plot("SecondJetPt", "le3j", "eq0b", "375_475", 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("AlphaT", "le3j", "eq0b", "375_475", 10, True)
+    # plot.save()
+    # plot = Ratio_Plot("SecondJetEta", "le3j", "eq0b", "375_475", 2, False)
     # plot.save()
 
 
