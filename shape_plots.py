@@ -253,36 +253,36 @@ class Ratio_Plot():
         for both h_1 and h_2.
         Plus a bit of padding on the left, and a lot more on the right
         """
-        # store values that mark edge of contents
+        # Loook for low edge
         low_1 = -1000000.
         low_2 = -1000000.
-        high_1 = 1000000.
-        high_2 = 1000000.
-
-        prev_1 = 0.
-        prev_2 = 0.
-
         found_low_1 = False
         found_low_2 = False
 
         for i in range(1, 1 + h_1.GetNbinsX()):
-            if not found_low_1 and not prev_1 and h_1.GetBinContent(i) > 0:
+            if not found_low_1 and h_1.GetBinContent(i) > 0.:
                 low_1 = h_1.GetBinLowEdge(i)
-                prev_1 = h_1.GetBinContent(i)
                 found_low_1 = True
-            if not found_low_2 and not prev_2 and h_2.GetBinContent(i) > 0:
+            if not found_low_2 and h_2.GetBinContent(i) > 0.:
                 low_2 = h_2.GetBinLowEdge(i)
-                prev_2 = h_2.GetBinContent(i)
                 found_low_2 = True
-            if prev_1 and not h_1.GetBinContent(i):
+
+        # Look for high edge
+        high_1 = 1000000.
+        high_2 = 1000000.
+        found_high_1 = False
+        found_high_2 = False
+
+        for i in range(1 + h_1.GetNbinsX(), 1, -1):
+            if not found_high_1 and h_1.GetBinContent(i) > 0.:
                 high_1 = h_1.GetBinLowEdge(i+1)
-                prev_1 = h_1.GetBinContent(i)
-            if prev_2 and not h_2.GetBinContent(i):
+                found_high_1 = True
+            if not found_high_2 and h_2.GetBinContent(i) > 0.:
                 high_2 = h_2.GetBinLowEdge(i+1)
-                prev_2 = h_2.GetBinContent(i)
+                found_high_2 = True
 
         xmin = low_1 if low_1 < low_2 else low_2
-        xmax = high_1 if high_1 > low_2 else high_2
+        xmax = high_1 if high_1 > high_2 else high_2
         # xmin -= (2*h_1.GetBinWidth(1))  # add little bit of padding to LHS
         xmax += 0.4 * (xmax-xmin)  # add some space to RHS
         print xmin, xmax
@@ -433,28 +433,33 @@ class Ratio_Plot():
         self.leg.AddEntry(self.error_hists_stat[-1], "Stat. error", "F")
         self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error", "F")
 
-        # Finally draw all the pieces
-        pad.SetLogy(self.log)
-        pad.SetTicks()
-
         # Get x range - but can only set it for the stack once you've drawn it (fail)
+        autorange_x = True
         xmin, xmax = self.autorange_xaxis(self.hist_data_signal, self.shape_stack.GetStack().Last())
-        self.hist_data_signal.SetAxisRange(xmin, xmax, "X")
+        if autorange_x:
+            self.hist_data_signal.SetAxisRange(xmin, xmax, "X")
 
         # Urgh trying to set y axis maximum correctly is a massive ball ache,
         # since THStack doesn't account for error properly (that's now 2 ROOT bugs)
         sum_stack = self.shape_stack.GetStack().Last()  # the "sum" of component hists
-        max_stack = sum_stack.GetMaximum() + sum_stack.GetBinError(sum_stack.GetMaximumBin())
+        max_stack = sum_stack.GetMaximum() + self.error_hists_stat_syst[-1].GetBinError(sum_stack.GetMaximumBin())
         max_data = self.hist_data_signal.GetMaximum() + self.hist_data_signal.GetBinError(self.hist_data_signal.GetMaximumBin())
+        print max_stack, max_data
+
+        # Finally draw all the pieces
+        pad.SetLogy(self.log)
+        pad.SetTicks()
 
         if max_stack > max_data:
             self.shape_stack.Draw("HIST")
-            self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
-            r.gPad.Update();
-            ymin = r.gPad.GetUymin()
+            if autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
+            # r.gPad.Update();
+            # ymin = r.gPad.GetUymin()
+            ymin = self.error_hists_stat[0].GetMinimum(0) * 0.75
+            print "ymin:", ymin
             if self.log:
                 self.shape_stack.SetMaximum(max_stack * 5.)
-                if (ymin <= 0.): ymin = 0.001
+                if (ymin <= 0.): ymin = 0.01
             else:
                 self.shape_stack.SetMaximum(max_stack * 1.1)
             self.shape_stack.SetMinimum(ymin)  # setting maximum somehow FUs min - do manually
@@ -463,12 +468,12 @@ class Ratio_Plot():
         else:
             self.hist_data_signal.Draw()
             self.shape_stack.Draw("HIST SAME")
-            self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
+            if autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
             self.hist_data_signal.Draw("SAME")
 
-        [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat]
+        if autorange_x: [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat]
         [h.Draw("E2 SAME") for h in self.error_hists_stat]
-        [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat_syst]
+        if autorange_x: [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat_syst]
         [h.Draw("E2 SAME") for h in self.error_hists_stat_syst]
         self.hist_data_signal.Draw("SAME")  # data points ontop of everything
         pad.RedrawAxis()  # important to put axis on top of all plots
@@ -492,8 +497,8 @@ class Ratio_Plot():
         self.style_hist_ratio(self.hist_ratio)
         self.hist_ratio.Draw("EP")
         r.gPad.Update();
-        min = self.hist_ratio.GetXaxis().GetXmin() # NOPE DOESN'T WORK
-        max = self.hist_ratio.GetXaxis().GetXmax()
+        # min = self.hist_ratio.GetXaxis().GetXmin() # NOPE DOESN'T WORK
+        # max = self.hist_ratio.GetXaxis().GetXmax()
         xmin, xmax = self.autorange_xaxis(h_data, h_mc)
         # For some unbelievably fucking stupid reason, I have to use
         # gPad.GetUxmax for upper edge, but xmin for lower edge as
