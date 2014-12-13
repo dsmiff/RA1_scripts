@@ -472,7 +472,7 @@ class Ratio_Plot():
             ymin = self.error_hists_stat[0].GetMinimum(0) * 0.75
             print "ymin:", ymin
             if self.log:
-                self.shape_stack.SetMaximum(max_stack * 5.)
+                self.shape_stack.SetMaximum(max_stack * 3.)
                 if (ymin <= 0.): ymin = 0.01
             else:
                 self.shape_stack.SetMaximum(max_stack * 1.1)
