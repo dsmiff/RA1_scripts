@@ -84,6 +84,7 @@ class Ratio_Plot():
         self.htstring = self.make_ht_string(htbins)
         self.rebin = rebin
         self.log = log
+        self.autorange_x = True  # to auto set x range for non-empty range
         self.c = r.TCanvas()
         self.up = r.TPad("u","",0.01,0.25,0.99,0.99)
         self.dp = r.TPad("d","",0.01,0.01,0.99,0.25)
@@ -92,6 +93,7 @@ class Ratio_Plot():
         self.component_hists = []
         self.transfer_factors = {}
         self.shape_stack = r.THStack("shape_stack", "")
+        self.errors_all_hists = False  # set true if you want errors on all component hists as well
         self.error_hists_stat = []
         self.error_hists_stat_syst = []
         self.stdtxt = self.make_standard_text()
@@ -413,6 +415,7 @@ class Ratio_Plot():
             # Some shimmer BEFORE adding to stack
             self.style_hist(h, h.GetName())
             self.shape_stack.Add(h)
+
             # copies for stat/syst error bars
             if not self.error_hists_stat:
                 h_stat = h.Clone()
@@ -445,9 +448,8 @@ class Ratio_Plot():
         self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error", "F")
 
         # Get x range - but can only set it for the stack once you've drawn it (fail)
-        autorange_x = True
         xmin, xmax = self.autorange_xaxis(self.hist_data_signal, self.shape_stack.GetStack().Last())
-        if autorange_x:
+        if self.autorange_x:
             self.hist_data_signal.SetAxisRange(xmin, xmax, "X")
 
         # Urgh trying to set y axis maximum correctly is a massive ball ache,
@@ -463,7 +465,7 @@ class Ratio_Plot():
 
         if max_stack > max_data:
             self.shape_stack.Draw("HIST")
-            if autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
+            if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
             # r.gPad.Update();
             # ymin = r.gPad.GetUymin()
             ymin = self.error_hists_stat[0].GetMinimum(0) * 0.75
@@ -479,13 +481,17 @@ class Ratio_Plot():
         else:
             self.hist_data_signal.Draw()
             self.shape_stack.Draw("HIST SAME")
-            if autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
+            if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
             self.hist_data_signal.Draw("SAME")
 
-        if autorange_x: [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat]
-        [h.Draw("E2 SAME") for h in self.error_hists_stat]
-        if autorange_x: [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat_syst]
-        [h.Draw("E2 SAME") for h in self.error_hists_stat_syst]
+        if self.autorange_x: [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat]
+        if self.autorange_x: [h.GetXaxis().SetRangeUser(xmin, xmax) for h in self.error_hists_stat_syst]
+        if self.errors_all_hists:
+            [h.Draw("E2 SAME") for h in self.error_hists_stat]
+            [h.Draw("E2 SAME") for h in self.error_hists_stat_syst]
+        else:
+            self.error_hists_stat[-1].Draw("E2 SAME")
+            self.error_hists_stat_syst[-1].Draw("E2 SAME")
         self.hist_data_signal.Draw("SAME")  # data points ontop of everything
         pad.RedrawAxis()  # important to put axis on top of all plots
         self.title_axes(self.hist_data_signal, self.var, "Events")
