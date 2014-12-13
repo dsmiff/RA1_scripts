@@ -32,7 +32,9 @@ dimu_data = grabr.grab_plots(f_path="/Users/robina/Dropbox/AlphaT/Root_Files_28N
                             sele = "DiMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = "le3j",
                             btag = "eq0b", ht_bins = ["375_475"])
 dimu_data.Rebin(10)
+c.SetLogy()
 dimu_data.Draw("HISTE")
+
 c.SaveAs("data_dimu.pdf")
 
 # Set all data to be black
@@ -111,9 +113,9 @@ for p in processes_mc_ctrl:
 
 c = r.TCanvas()
 mc_dimu.Draw("HISTE")
+c.SetLogy()
 c.SaveAs("mc_dimu.pdf")
 
-c.SetLogy()
 
 mc_ratio = mc_had.Clone() # has zinv in SR so use onemu only
 mc_ratio.Divide(mc_onemu)

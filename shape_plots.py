@@ -128,13 +128,13 @@ class Ratio_Plot():
             self.c.SaveAs(name)
 
 
-    def color_hist(self, hist, color):
+    def color_hist(self, hist, line_color, fill_color, marker_color):
         """
         Set marker/line/fill color for histogram
         """
-        hist.SetLineColor(color)
-        hist.SetFillColor(color)
-        hist.SetMarkerColor(color)
+        hist.SetLineColor(line_color)
+        hist.SetFillColor(fill_color)
+        hist.SetMarkerColor(marker_color)
 
 
     def style_hist(self, hist, region):
@@ -143,9 +143,9 @@ class Ratio_Plot():
         """
         hist.Rebin(self.rebin)
         if region == "OneMuon":
-            self.color_hist(hist, r.kViolet + 1)
+            self.color_hist(hist, r.kBlack, r.kViolet + 1, r.kViolet + 1)
         elif region == "DiMuon":
-            self.color_hist(hist, r.kOrange)
+            self.color_hist(hist, r.kBlack, r.kOrange, r.kOrange)
         elif region == "Data":
             hist.SetMarkerColor(r.kBlack)
             # hist.SetMarkerSize(2)
