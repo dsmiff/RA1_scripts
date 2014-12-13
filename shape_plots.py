@@ -552,7 +552,8 @@ def make_plot_bins(var):
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
                     "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 20,
-                    "MET_Corrected": 4, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4}
+                    "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4,
+                    "MHT": 4}
         if v in rebin_d:
             rebin = rebin_d[v]
 
@@ -569,8 +570,8 @@ def make_plot_bins(var):
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
                     "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 10,
-                    "MET_Corrected": 4, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4,
-                    "MHT": 4}
+                    "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4,
+                    "MHT": 8}
         if v in rebin_d:
             rebin = rebin_d[v]
 
@@ -625,14 +626,6 @@ def make_plot_bins(var):
     # plot = Ratio_Plot("Number_Btags", "le3j", "eq0b", "375_475", 2, False)
     # plot.save()
     # plot = Ratio_Plot("Number_Good_verticies", "le3j", "eq0b", "375_475", 2, False)
-    # plot.save()
-
-    # For testing
-    # plot = Ratio_Plot("SecondJetPt", "le3j", "eq0b", "375_475", 2, False)
-    # plot.save()
-    # plot = Ratio_Plot("AlphaT", "le3j", "eq0b", "375_475", 10, True)
-    # plot.save()
-    # plot = Ratio_Plot("SecondJetEta", "le3j", "eq0b", "375_475", 2, False)
     # plot.save()
 
 
