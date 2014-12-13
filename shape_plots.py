@@ -196,7 +196,7 @@ class Ratio_Plot():
         hist.SetTitleOffset(hist.GetYaxis().GetTitleOffset()/ratioY, "Y")
         hist.SetLabelOffset(hist.GetYaxis().GetLabelOffset()*ratioY, "Y")
         hist.GetYaxis().SetNdivisions(6+(100*6))
-        hist.GetYaxis().SetRangeUser(0, 2.0)
+        hist.GetYaxis().SetRangeUser(0, 3.0)
 
         hist.SetTitleSize(hist.GetXaxis().GetTitleSize()*ratioY, "X")
         hist.SetLabelSize(hist.GetXaxis().GetLabelSize()*ratioY, "X")
@@ -392,6 +392,7 @@ class Ratio_Plot():
         """
         For a given variable, NJet, Nbtag, HT bins,
         makes data VS background plot, where BG is from data control regions.
+        Lots of ugly ROOT hacks in here (axis ranges, etc)
         """
         pad.Draw()
         pad.cd()
