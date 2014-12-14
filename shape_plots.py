@@ -20,6 +20,7 @@ from itertools import product, izip
 import math
 import numpy as np
 import os
+import array
 
 r.TH1.SetDefaultSumw2(True)
 r.gStyle.SetOptStat(0)
@@ -139,11 +140,24 @@ class Ratio_Plot():
         hist.SetMarkerColor(marker_color)
 
 
+    def rebin_hist(self, hist, rebin=None):
+        if hasattr(self.rebin, "__len__"):
+            print "we got bins"
+            return hist.Rebin(len(self.rebin)-1, hist.GetName(), self.rebin)
+        else:
+            return hist.Rebin(self.rebin)
+
+
     def style_hist(self, hist, region):
         """
-        Do some aesthetic stylings on hists.
+        Do some aesthetic stylings on hists, & rebin
         """
-        hist.Rebin(self.rebin)
+        # if hasattr(self.rebin, "__len__"):
+        #     print "we got bins"
+        #     hist = hist.Rebin(len(self.rebin)-1, hist.GetName(), self.rebin)
+        # else:
+        #     hist.Rebin(self.rebin)
+
         if region == "OneMuon":
             self.color_hist(hist, r.kBlack, r.kViolet + 1, r.kViolet + 1)
         elif region == "DiMuon":
@@ -398,6 +412,7 @@ class Ratio_Plot():
         pad.cd()
 
         self.style_hist(self.hist_data_signal, "Data")
+        self.hist_data_signal = self.rebin_hist(self.hist_data_signal)
 
         # Make stack of backgrounds, and put error bands on each contribution:
         # There is a ROOT bug whereby if you try and make copies of the hists,
@@ -415,6 +430,7 @@ class Ratio_Plot():
         for h in self.component_hists:
             # Some shimmer BEFORE adding to stack
             self.style_hist(h, h.GetName())
+            h = self.rebin_hist(h)
             self.shape_stack.Add(h)
 
             # copies for stat/syst error bars
@@ -547,11 +563,17 @@ def make_plot_bins(var):
     For a given variable, makes data VS background plots for all the
     relevant HT, Njets, Nbtag bins
     """
+    # Custom bins for AlphaT per Rob's suggestion
+    b1 = np.arange(0.5, 1.0, 0.05)
+    b2 = np.arange(1.0, 4.0, 0.5)
+    alphaT_bins = np.concatenate((b1, b2))
+    # alphaT_bins = 20 # an alternate sensible equal bin value
+
     for v in var:
         print "Doing plots for", v
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 20,
+                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
                     "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4,
                     "MHT": 4}
         if v in rebin_d:
@@ -569,7 +591,7 @@ def make_plot_bins(var):
         print "Doing plots for", v
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 10,
+                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
                     "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4,
                     "MHT": 8}
         if v in rebin_d:
