@@ -527,7 +527,11 @@ class Ratio_Plot():
         pad.SetTicks()
 
         self.hist_ratio = h_data.Clone("ratio")
-        self.hist_ratio.Divide(h_mc.Clone())
+        # Don't want any MC errors on the points
+        hist_mc_no_err = h_mc.Clone()
+        for i in range(1, 1+h_mc.GetNbinsX()):
+            hist_mc_no_err.SetBinError(i, 0)
+        self.hist_ratio.Divide(hist_mc_no_err)
         self.style_hist_ratio(self.hist_ratio)
         self.hist_ratio.Draw("EP")
         r.gPad.Update();
@@ -608,9 +612,9 @@ def make_plot_bins(var):
         print "Doing plots for", v
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": 20,
-                    "MET_Corrected": 4, "HT": 10, "SecondJetPt": 4, "EffectiveMass": 10,
-                    "MHT": 4, "LeadJetPt": 4}
+                    "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
+                    "MET_Corrected": 8, "HT": 10, "SecondJetPt": 4, "EffectiveMass": 10,
+                    "MHT": 8, "LeadJetPt": 4}
         if v in rebin_d:
             rebin = rebin_d[v]
 
