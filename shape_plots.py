@@ -22,10 +22,11 @@ import numpy as np
 import os
 import array
 
-r.TH1.SetDefaultSumw2(True)
+r.TH1.SetDefaultSumw2(r.kTRUE)
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
+r.TH1.AddDirectory(r.kFALSE)
 
 # input files
 # ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_28Nov_aT_0p53_v1/" # original buggy
@@ -95,8 +96,8 @@ class Ratio_Plot():
         self.transfer_factors = {}
         self.shape_stack = r.THStack("shape_stack", "")
         self.errors_all_hists = False  # set true if you want errors on all component hists as well
-        self.error_hists_stat = []
-        self.error_hists_stat_syst = []
+        self.error_hists_stat = None
+        self.error_hists_stat_syst = None
         self.hist_ratio = None # For ratio plot data/MC points
         self.hist_ratio_stat = None # For ratio plot MC stat err bars
         self.hist_ratio_stat_syst = None # For ratio plot MC stat+syst err bars
@@ -107,6 +108,7 @@ class Ratio_Plot():
 
         # Now make plots
         self.make_hists()
+        self.make_error_hists()
         self.make_main_plot(self.up)
         self.c.cd()
         self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1], self.error_hists_stat[-1], self.error_hists_stat_syst[-1])
@@ -144,11 +146,18 @@ class Ratio_Plot():
 
 
     def rebin_hist(self, hist, rebin=None):
-        if hasattr(self.rebin, "__len__"):
-            print "we got bins"
-            return hist.Rebin(len(self.rebin)-1, hist.GetName(), self.rebin)
+        if not rebin:
+            rebin = self.rebin
+        if hasattr(rebin, "__len__"):
+            return hist.Rebin(len(rebin)-1, hist.GetName(), rebin)
         else:
-            return hist.Rebin(self.rebin)
+            if (hist.GetNbinsX() % rebin != 0):
+                print "WARNING: rebin factor not exact divisor of number of bins - not rebinning"
+                print "Original:", hist.GetNbinsX(), "Tried rebin factor:", rebin
+                rebin = 1
+            if rebin != 1:
+                return hist.Rebin(int(rebin))
+            return hist
 
 
     def style_hist(self, hist, region):
@@ -319,14 +328,15 @@ class Ratio_Plot():
         return xmin, xmax
 
 
-    def set_syst_errors(self, h):
+    def set_syst_errors(self, h, htbin, njet):
         """
         Turns stat errors into stat+syst errors using LUT at top
         """
         for i in range(1, h.GetNbinsX() + 1):
-            # syst =  h.GetBinContent(i) * tf_systs[self.njet][self.htbins] / 100.
+            # syst =  h.GetBinContent(i) * tf_systs[njet][htbin] / 100.
             syst = 0
             err = np.hypot(h.GetBinError(i), syst)
+            # print syst, err
             h.SetBinError(i, err)
 
 
@@ -374,7 +384,7 @@ class Ratio_Plot():
                 if not hist_mc_signal:
                     hist_mc_signal = MC_signal_tmp.Clone("MC_signal")
                 else:
-                    hist_mc_signal.Add(MC_signal_tmp)
+                    hist_mc_signal.Add(MC_signal_tmp.Clone())
 
             print "Total:", hist_mc_signal.Integral()
 
@@ -389,20 +399,143 @@ class Ratio_Plot():
                 if not hist_mc_control:
                     hist_mc_control = MC_ctrl_tmp.Clone()
                 else:
-                    hist_mc_control.Add(MC_ctrl_tmp)
+                    hist_mc_control.Add(MC_ctrl_tmp.Clone())
 
             print "Total:", hist_mc_control.Integral()
 
             hist_data_control.Multiply(hist_mc_signal)
             hist_data_control.Divide(hist_mc_control)
-            self.component_hists.append(hist_data_control)
-            print ctrl, "Estimate:", hist_data_control.Integral()
+            print hist_data_control.GetNbinsX()
+            self.component_hists.append(self.rebin_hist(hist_data_control))
+            print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
 
         # Get data hist
         self.hist_data_signal = grabr.grab_plots(f_path="%s/Had_Data.root" % ROOTdir,
                                             sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=self.htbins)
 
         print "Data SR:", self.hist_data_signal.Integral()
+
+
+    def make_error_hists(self):
+        """
+        Make hists for good looking error bars
+        Bit complicated as we might have lots of HT bins and have to do systs for each
+        Have to do all HT bins manually instead of relying on grab_plots
+        """
+        print ">>>>> Making error hists"
+        # The working way
+        for h in self.component_hists:
+            h_stat = h.Clone()
+            self.style_hist_err1(h_stat)
+            if not self.error_hists_stat:
+                self.error_hists_stat = [h_stat]
+            else:
+                h_stat.Add(self.error_hists_stat[-1])
+                self.error_hists_stat.append(h_stat)
+
+            h_syst = h.Clone()
+            self.style_hist_err2(h_syst)
+            if not self.error_hists_stat_syst:
+                self.error_hists_stat_syst = [h_syst]
+            else:
+                h_syst.Add(self.error_hists_stat_syst[-1])
+                self.error_hists_stat_syst.append(h_syst)
+            # self.set_syst_errors(self.error_hists_stat_syst[-1], "375_475", self.njet)
+
+
+
+
+        # THE PROPER WAY??
+        # for ctrl in ctrl_regions:
+
+        #     if "Muon" in ctrl:
+        #         f_start = "Muon"
+        #     elif "Photon" in ctrl:
+        #         f_start = "Photon"
+
+        #     # Cumulative for this control region, all valid HT bins
+        #     hist_err_stat = None
+        #     hist_err_stat_syst = None
+
+        #     # Loop over necessary HT bins
+        #     print ctrl
+        #     for ht in self.htbins:
+        #         print ht
+        #         print "Getting data control"
+        #         # Data in control region:
+        #         h_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (ROOTdir, f_start),
+        #                                           sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+        #         h_data_control.SetName(ctrl)
+
+        #         print "Getting MC signal"
+        #         # MC in signal region
+        #         if "0" in self.btag or "1" in self.btag:
+        #             processes = processes_mc_signal_le1b
+        #         else:
+        #             processes = processes_mc_signal_ge2b
+
+        #         hist_mc_signal = None
+        #         for p in processes[ctrl]:
+        #             MC_signal_tmp = grabr.grab_plots(f_path="%s/Had_%s.root" % (ROOTdir, p),
+        #                                              sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+        #             if not hist_mc_signal:
+        #                 # hist_mc_signal = MC_signal_tmp.Clone("MC_signal")
+        #                 hist_mc_signal = MC_signal_tmp
+        #             else:
+        #                 hist_mc_signal.Add(MC_signal_tmp)
+
+        #         print "Getting MC control"
+        #         # MC in control region
+        #         hist_mc_control = None
+        #         for p in processes_mc_ctrl:
+        #             MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (ROOTdir, f_start, p),
+        #                                            sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+        #             if not hist_mc_control:
+        #                 # hist_mc_control = MC_ctrl_tmp.Clone("MC_control")
+        #                 hist_mc_control = MC_ctrl_tmp
+        #             else:
+        #                 hist_mc_control.Add(MC_ctrl_tmp)
+        #         print "Divide and conquere"
+        #         h_data_control.Multiply(hist_mc_signal)
+        #         h_data_control.Divide(hist_mc_control)
+        #         h_data_control = h_data_control
+
+        #         # stat err
+        #         h_stat = h_data_control.Clone(ctrl+ht+"stat")
+        #         self.style_hist_err1(h_stat)
+        #         if not hist_err_stat:
+        #             hist_err_stat = h_stat
+        #         else:
+        #             hist_err_stat.Add(h_stat)
+
+        #         # syst err
+        #         h_syst = h_data_control.Clone(ctrl+ht+"syst")
+        #         self.set_syst_errors(h_syst, ht, self.njet)
+        #         self.style_hist_err2(h_syst)
+        #         if not hist_err_stat_syst:
+        #             hist_err_stat_syst = h_syst
+        #         else:
+        #             hist_err_stat_syst.Add(h_syst)
+
+        #         print "Adding", h_stat.Integral()
+        #     hist_err_stat = self.rebin_hist(hist_err_stat)
+        #     hist_err_stat_syst = self.rebin_hist(hist_err_stat_syst)
+
+
+        #     # Add to total collection for this control region
+        #     if not self.error_hists_stat:
+        #         self.error_hists_stat = [hist_err_stat]
+        #     else:
+        #         hist_err_stat.Add(self.error_hists_stat[-1])
+        #         self.error_hists_stat.append(hist_err_stat)
+
+        #     if not self.error_hists_stat_syst:
+        #         self.error_hists_stat_syst = [hist_err_stat_syst]
+        #     else:
+        #         hist_err_stat_syst.Add(self.error_hists_stat_syst[-1])
+        #         self.error_hists_stat_syst.append(hist_err_stat_syst)
+
+        # print self.error_hists_stat[-1].Integral()
 
 
     def make_main_plot(self, pad):
@@ -427,37 +560,15 @@ class Ratio_Plot():
         # If you only want an error band on the total, then it's easy: make a clone
         # of stack.Last(), and Draw("E2").
 
+        # Loop through shape components: mod style, add to THStack
         # Want to add hists to THStack by ascending Integral()
         self.component_hists.sort(key=lambda hist: hist.Integral())
-        # Loop through shape components: mod style, add to THStack, make error bars
         for h in self.component_hists:
             # Some shimmer BEFORE adding to stack
             self.style_hist(h, h.GetName())
-            h = self.rebin_hist(h)
             self.shape_stack.Add(h)
 
-            # copies for stat/syst error bars
-            if not self.error_hists_stat:
-                h_stat = h.Clone()
-                self.style_hist_err1(h_stat)
-                self.error_hists_stat = [h_stat]
-
-                h_syst = h.Clone()
-                self.style_hist_err2(h_syst)
-                self.set_syst_errors(h_syst)
-                self.error_hists_stat_syst = [h_syst]
-            else:
-                h_stat = self.error_hists_stat[-1].Clone()
-                h_stat.Add(h)
-                self.style_hist_err1(h_stat)
-                self.error_hists_stat.append(h_stat)
-
-                h_syst = self.error_hists_stat_syst[-1].Clone()
-                h_syst.Add(h)
-                self.style_hist_err2(h_syst)
-                self.set_syst_errors(h_syst)
-                self.error_hists_stat_syst.append(h_syst)
-
+        print "BG estimate from data:", self.shape_stack.GetStack().Last().Integral()
         print "BG estimate from data:", self.error_hists_stat[-1].Integral()
 
         # add entries to the legend
@@ -590,7 +701,7 @@ def make_plot_bins(var):
     """
     # Custom bins for AlphaT per Rob's suggestion
     b1 = np.arange(0.5, 1.0, 0.05)
-    b2 = np.arange(1.0, 4.0, 0.5)
+    b2 = np.arange(1.0, 4.5, 0.5)
     alphaT_bins = np.concatenate((b1, b2))
     # alphaT_bins = 20 # an alternate sensible equal bin value
 
@@ -599,7 +710,7 @@ def make_plot_bins(var):
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
                     "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
-                    "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4,
+                    "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 5,
                     "MHT": 4}
         if v in rebin_d:
             rebin = rebin_d[v]
@@ -607,7 +718,6 @@ def make_plot_bins(var):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
-
         # plot = Ratio_Plot(v, "le3j", "eq0b", ["375_475"], rebin, log)
         # plot.save()
 
@@ -617,11 +727,11 @@ def make_plot_bins(var):
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
                     "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
-                    "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 4,
+                    "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 5,
                     "MHT": 8}
         if v in rebin_d:
             rebin = rebin_d[v]
-
+        print rebin
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
@@ -634,7 +744,7 @@ def make_plot_bins(var):
         rebin = 2
         rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
                     "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
-                    "MET_Corrected": 8, "HT": 10, "SecondJetPt": 4, "EffectiveMass": 10,
+                    "MET_Corrected": 8, "HT": 2, "SecondJetPt": 4, "EffectiveMass": 10,
                     "MHT": 8, "LeadJetPt": 4}
         if v in rebin_d:
             rebin = rebin_d[v]
@@ -642,8 +752,13 @@ def make_plot_bins(var):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]:
             log = True
-        plot = Ratio_Plot(v, "le3j", "eq0b", HTbins, rebin, log)
+        plot = Ratio_Plot(v, "ge4j", "eq0b", HTbins, rebin, log)
         plot.save()
+
+    # plot = Ratio_Plot("SecondJetEta", "le3j", "eq0b", HTbins, 2, False)
+    # plot.save()
+    # plot = Ratio_Plot("HT", "le3j", "eq0b", HTbins, 5, True)
+    # plot.save()
 
     # Testing
     # plot = Ratio_Plot("AlphaT", "le3j", "eq0b", "375_475", 20, True)
