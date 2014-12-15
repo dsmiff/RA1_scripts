@@ -97,6 +97,9 @@ class Ratio_Plot():
         self.errors_all_hists = False  # set true if you want errors on all component hists as well
         self.error_hists_stat = []
         self.error_hists_stat_syst = []
+        self.hist_ratio = None # For ratio plot data/MC points
+        self.hist_ratio_stat = None # For ratio plot MC stat err bars
+        self.hist_ratio_stat_syst = None # For ratio plot MC stat+syst err bars
         self.stdtxt = self.make_standard_text()
         self.cuttxt = self.make_bin_text()
         self.leg = self.make_legend()
@@ -106,7 +109,7 @@ class Ratio_Plot():
         self.make_hists()
         self.make_main_plot(self.up)
         self.c.cd()
-        self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1])
+        self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1], self.error_hists_stat[-1], self.error_hists_stat_syst[-1])
         self.c.cd()
 
 
@@ -518,7 +521,7 @@ class Ratio_Plot():
         self.cuttxt.Draw("SAME")
 
 
-    def make_ratio_plot(self, pad, h_data, h_mc, fit=True):
+    def make_ratio_plot(self, pad, h_data, h_mc, h_mc_stat=None, h_mc_stat_syst=None, fit=True):
         """
         Makes the little data/MC ratio plot
         """
@@ -527,13 +530,31 @@ class Ratio_Plot():
         pad.SetTicks()
 
         self.hist_ratio = h_data.Clone("ratio")
-        # Don't want any MC errors on the points
-        hist_mc_no_err = h_mc.Clone()
+        self.hist_ratio_stat = h_mc_stat.Clone("mcstat")
+        self.hist_ratio_stat_syst = h_mc_stat_syst.Clone("mcstatsyst")
+
+        # Only want stat errs from data in SR on points
+        # Also construct MC error bars
+        h_mc_no_err = h_mc.Clone()
         for i in range(1, 1+h_mc.GetNbinsX()):
-            hist_mc_no_err.SetBinError(i, 0)
-        self.hist_ratio.Divide(hist_mc_no_err)
+            h_mc_no_err.SetBinError(i, 0)
+            if self.hist_ratio_stat.GetBinContent(i) != 0.:
+                self.hist_ratio_stat.SetBinError(i, self.hist_ratio_stat.GetBinError(i)/self.hist_ratio_stat.GetBinContent(i))
+            self.hist_ratio_stat.SetBinContent(i, 1)
+            if self.hist_ratio_stat_syst.GetBinContent(i) != 0.:
+                self.hist_ratio_stat_syst.SetBinError(i, self.hist_ratio_stat_syst.GetBinError(i)/self.hist_ratio_stat_syst.GetBinContent(i))
+            self.hist_ratio_stat_syst.SetBinContent(i, 1)
+
+        self.hist_ratio.Divide(h_mc_no_err)
         self.style_hist_ratio(self.hist_ratio)
-        self.hist_ratio.Draw("EP")
+        self.style_hist_ratio(self.hist_ratio_stat)
+        self.style_hist_err1(self.hist_ratio_stat)
+        self.style_hist_err2(self.hist_ratio_stat_syst)
+
+        # Draw all the bits
+        self.hist_ratio_stat.Draw("E2")
+        self.hist_ratio_stat_syst.Draw("E2 SAME")
+        self.hist_ratio.Draw("EP SAME")
         r.gPad.Update();
         # min = self.hist_ratio.GetXaxis().GetXmin() # NOPE DOESN'T WORK
         # max = self.hist_ratio.GetXaxis().GetXmax()
