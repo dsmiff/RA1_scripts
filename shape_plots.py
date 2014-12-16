@@ -37,7 +37,7 @@ ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/"  
 # "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
 plot_vars = ["Number_Btags", "AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
-             "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass", "Number_Good_verticies"]
+             "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass", "Number_Good_verticies"][1:]
 
 # Where you want to store plots
 # And what you want to call the plots - will be out_dir/out_stem_<var>_<njet>_<btag>_<htbin>.pdf
@@ -109,7 +109,6 @@ class Ratio_Plot():
 
         # Now make plots
         self.make_hists()
-        # self.make_error_hists()
         self.make_main_plot(self.up)
         self.c.cd()
         self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1], self.error_hists_stat[-1], self.error_hists_stat_syst[-1])
@@ -389,11 +388,12 @@ class Ratio_Plot():
                                                      sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     print p, MC_signal_tmp.Integral()
                     if not hist_mc_signal:
-                        hist_mc_signal = MC_signal_tmp.Clone("MC_signal")
+                        hist_mc_signal = MC_signal_tmp#.Clone()
                     else:
-                        hist_mc_signal.Add(MC_signal_tmp.Clone())
+                        # hist_mc_signal.Add(MC_signal_tmp.Clone())
+                        hist_mc_signal.Add(MC_signal_tmp)
 
-                print "Total:", hist_mc_signal.Integral()
+                print "Total MC signal region:", hist_mc_signal.Integral()
 
                 # MC in control region
                 print "MC in control region:"
@@ -402,17 +402,18 @@ class Ratio_Plot():
                     MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (ROOTdir, f_start, p),
                                                    sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     print p, MC_ctrl_tmp.Integral()
-                    # print p, MC_ctrl_tmp.Integral()
                     if not hist_mc_control:
-                        hist_mc_control = MC_ctrl_tmp.Clone()
+                        # hist_mc_control = MC_ctrl_tmp.Clone()
+                        hist_mc_control = MC_ctrl_tmp
                     else:
-                        hist_mc_control.Add(MC_ctrl_tmp.Clone())
+                        # hist_mc_control.Add(MC_ctrl_tmp.Clone())
+                        hist_mc_control.Add(MC_ctrl_tmp)
 
-                # print "Total:", hist_mc_control.Integral()
+                print "Total MC control region:", hist_mc_control.Integral()
 
                 hist_data_control.Multiply(hist_mc_signal)
                 hist_data_control.Divide(hist_mc_control)
-                # hist_data_control = self.rebin_hist(hist_data_control)
+                # hist_data_control = self.rebin_hist(hist_data_control) # This segfaults soometimes
 
                 # Calculate syst error on TF for this bin
                 h_syst = hist_data_control.Clone()
@@ -426,7 +427,8 @@ class Ratio_Plot():
                     hist_stat_total.Add(hist_data_control.Clone())
                     hist_syst_total.Add(h_syst)
 
-                # print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
+                print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
+
             hist_total = self.rebin_hist(hist_total)
             self.component_hists.append(hist_total)
 
@@ -446,7 +448,6 @@ class Ratio_Plot():
                 hist_syst_total.Add(self.error_hists_stat_syst[-1])
                 self.error_hists_stat_syst.append(hist_syst_total)
 
-            print self.error_hists_stat_syst[-1].Integral()
 
         # Get data hist
         self.hist_data_signal = grabr.grab_plots(f_path="%s/Had_Data.root" % ROOTdir,
@@ -519,11 +520,11 @@ class Ratio_Plot():
             if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
             # r.gPad.Update();
             # ymin = r.gPad.GetUymin()
-            ymin = 0.
             if self.autorange_y:
+                ymin = 0. # 0 for lin axis, non-0 for log
                 if self.log:
-                    ymin = self.error_hists_stat[0].GetMinimum(0) * 0.75
                     self.shape_stack.SetMaximum(max_stack * 3.)
+                    ymin = self.error_hists_stat[0].GetMinimum(0.) * 0.75
                     if (ymin <= 0.): ymin = 0.01
                 else:
                     self.shape_stack.SetMaximum(max_stack * 1.1)
@@ -531,6 +532,7 @@ class Ratio_Plot():
             self.shape_stack.Draw("HIST")
             self.hist_data_signal.Draw("SAME")
         else:
+            # Trust ROOT to set y axis sensibly
             self.hist_data_signal.Draw()
             self.shape_stack.Draw("HIST SAME")
             if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
@@ -639,11 +641,9 @@ def make_plot_bins(var):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
-        plot = Ratio_Plot(v, "le3j", "eq0b", ["375_475"], rebin, log)
-        plot.save()
+        # plot = Ratio_Plot(v, "le3j", "eq0b", ["375_475"], rebin, log)
+        # plot.save()
 
-    # plot = Ratio_Plot("Number_Btags", "le3j", "eq0b", ["375_475"], 1, False)
-    # plot.save()
 
     # For ge4j cos the binning is diff in cases...
     for v in var:
@@ -660,8 +660,7 @@ def make_plot_bins(var):
             log = True
         # plot = Ratio_Plot(v, "ge4j", "eq0b", ["375_475"], rebin, log)
         # plot.save()
-    # plot = Ratio_Plot("Number_Btags", "ge4j", "eq0b", ["375_475"], 1, False)
-    # plot.save()
+
 
     # For inclusive HT
     for v in var:
@@ -677,8 +676,8 @@ def make_plot_bins(var):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]:
             log = True
-        # plot = Ratio_Plot(v, "le3j", "eq0b", HTbins, rebin, log)
-        # plot.save()
+        plot = Ratio_Plot(v, "le3j", "eq0b", HTbins, rebin, log)
+        plot.save()
         # plot = Ratio_Plot(v, "ge4j", "eq0b", HTbins, rebin, log)
         # plot.save()
 
@@ -773,5 +772,5 @@ def do_all_the_plots():
 
 if __name__ == "__main__":
     print "Making lots of data VS bg plots..."
-    make_plot_bins(plot_vars)
-    # do_all_the_plots()
+    # make_plot_bins(plot_vars)
+    do_all_the_plots()
