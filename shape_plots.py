@@ -35,7 +35,7 @@ ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/"  
 
 # Variable(s) you want to plot
 # "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
-plot_vars = ["AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
+plot_vars = ["Number_Btags", "AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
              "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass", "Number_Good_verticies"]
 
@@ -87,6 +87,7 @@ class Ratio_Plot():
         self.rebin = rebin
         self.log = log
         self.autorange_x = True  # to auto set x range for non-empty range
+        self.autorange_y = True  # to auto set y range for sensible range
         self.c = r.TCanvas()
         self.up = r.TPad("u","",0.01,0.25,0.99,0.99)
         self.dp = r.TPad("d","",0.01,0.01,0.99,0.25)
@@ -102,7 +103,7 @@ class Ratio_Plot():
         self.hist_ratio_stat = None # For ratio plot MC stat err bars
         self.hist_ratio_stat_syst = None # For ratio plot MC stat+syst err bars
         self.stdtxt = self.make_standard_text()
-        self.cuttxt = self.make_bin_text()
+        self.cuttxt = self.make_bin_text(custom="#alpha_{T} > 0.53 in signal region")
         self.leg = self.make_legend()
         self.c.cd()
 
@@ -124,7 +125,7 @@ class Ratio_Plot():
         return htstring
 
 
-    def save(self, name=None):
+    def save(self, odir=None, name=None):
         self.c.cd()
         if not name:
             # check outdir exists
@@ -270,13 +271,16 @@ class Ratio_Plot():
         return t
 
 
-    def make_bin_text(self):
+    def make_bin_text(self, custom=None):
         """
         Generate label of which bin
         """
-        t = r.TPaveText(0.1, 0.91, 0.5, 0.95, "NDC")
+        t = r.TPaveText(0.1, 0.91, 0.9, 0.95, "NDC")
         b_str = grabr.btag_string(self.btag) if grabr.btag_string(self.btag) else "geq 0 btag"
-        tt = t.AddText("%s, %s, HT bin %s" % (self.njet, b_str, self.htstring))
+        if custom:
+            tt = t.AddText("%s, %s, HT bin %s, %s" % (self.njet, b_str, self.htstring, custom))
+        else:
+            tt = t.AddText("%s, %s, HT bin %s" % (self.njet, b_str, self.htstring))
         tt.SetTextAlign(12)
         t.SetFillColor(0)
         t.SetFillStyle(0)
@@ -395,9 +399,9 @@ class Ratio_Plot():
                 print "MC in control region:"
                 hist_mc_control = None
                 for p in processes_mc_ctrl:
-                    print p
                     MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (ROOTdir, f_start, p),
                                                    sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+                    print p, MC_ctrl_tmp.Integral()
                     # print p, MC_ctrl_tmp.Integral()
                     if not hist_mc_control:
                         hist_mc_control = MC_ctrl_tmp.Clone()
@@ -503,6 +507,9 @@ class Ratio_Plot():
         max_data = self.hist_data_signal.GetMaximum() + self.hist_data_signal.GetBinError(self.hist_data_signal.GetMaximumBin())
         print max_stack, max_data
 
+        if max_stack < 0. or max_data < 0.:
+            raise Exception("max_stack (%f) or max_data(%f) < 0!" % (max_stack, max_data))
+
         # Finally draw all the pieces
         pad.SetLogy(self.log)
         pad.SetTicks()
@@ -512,14 +519,15 @@ class Ratio_Plot():
             if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
             # r.gPad.Update();
             # ymin = r.gPad.GetUymin()
-            ymin = self.error_hists_stat[0].GetMinimum(0) * 0.75
-            print "ymin:", ymin
-            if self.log:
-                self.shape_stack.SetMaximum(max_stack * 3.)
-                if (ymin <= 0.): ymin = 0.01
-            else:
-                self.shape_stack.SetMaximum(max_stack * 1.1)
-            self.shape_stack.SetMinimum(ymin)  # setting maximum somehow FUs min - do manually
+            ymin = 0.
+            if self.autorange_y:
+                if self.log:
+                    ymin = self.error_hists_stat[0].GetMinimum(0) * 0.75
+                    self.shape_stack.SetMaximum(max_stack * 3.)
+                    if (ymin <= 0.): ymin = 0.01
+                else:
+                    self.shape_stack.SetMaximum(max_stack * 1.1)
+                self.shape_stack.SetMinimum(ymin)  # setting maximum somehow FUs min - do manually
             self.shape_stack.Draw("HIST")
             self.hist_data_signal.Draw("SAME")
         else:
@@ -618,6 +626,7 @@ def make_plot_bins(var):
     alphaT_bins = np.concatenate((b1, b2))
     # alphaT_bins = 20 # an alternate sensible equal bin value
 
+    # ONLY DO ONE OF THE FOLLOWING - IF YOU TRY AND DO ALL IT'LL SEGFAULT
     for v in var:
         print "Doing plots for", v
         rebin = 2
@@ -630,8 +639,11 @@ def make_plot_bins(var):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
-        # plot = Ratio_Plot(v, "le3j", "eq0b", ["375_475"], rebin, log)
-        # plot.save()
+        plot = Ratio_Plot(v, "le3j", "eq0b", ["375_475"], rebin, log)
+        plot.save()
+
+    # plot = Ratio_Plot("Number_Btags", "le3j", "eq0b", ["375_475"], 1, False)
+    # plot.save()
 
     # For ge4j cos the binning is diff in cases...
     for v in var:
@@ -648,6 +660,8 @@ def make_plot_bins(var):
             log = True
         # plot = Ratio_Plot(v, "ge4j", "eq0b", ["375_475"], rebin, log)
         # plot.save()
+    # plot = Ratio_Plot("Number_Btags", "ge4j", "eq0b", ["375_475"], 1, False)
+    # plot.save()
 
     # For inclusive HT
     for v in var:
@@ -663,8 +677,10 @@ def make_plot_bins(var):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]:
             log = True
-        plot = Ratio_Plot(v, "ge4j", "eq0b", HTbins, rebin, log)
-        plot.save()
+        # plot = Ratio_Plot(v, "le3j", "eq0b", HTbins, rebin, log)
+        # plot.save()
+        # plot = Ratio_Plot(v, "ge4j", "eq0b", HTbins, rebin, log)
+        # plot.save()
 
     # plot = Ratio_Plot("SecondJetEta", "le3j", "eq0b", HTbins, 2, False)
     # plot.save()
@@ -702,6 +718,60 @@ def make_plot_bins(var):
     # plot.save()
 
 
+def do_all_the_plots():
+    """
+    The big enchilada
+    """
+    # Custom bins for AlphaT per Rob's suggestion
+    b1 = np.arange(0.5, 1.0, 0.05)
+    b2 = np.arange(1.0, 4.5, 0.5)
+    alphaT_bins = np.concatenate((b1, b2))
+
+    # exclusive HT bins
+    rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
+                "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
+                "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 5,
+                "MHT": 4}
+    log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets"] #, "HT"]:
+
+    for v, njet, btag, ht in product(plot_vars, n_j, n_b, HTbins):
+        if v in rebin_d:
+            rebin = rebin_d[v]
+        else:
+            rebin = 2
+        if v in log_these:
+            log = True
+        else:
+            log = False
+
+        print  v, njet, btag, [ht]
+        plot = Ratio_Plot(v, njet, btag, [ht], rebin, log)
+        plot.save()
+
+    # inclusive HT
+    rebin = 2
+    rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
+                "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
+                "MET_Corrected": 8, "HT": 5, "SecondJetPt": 4, "EffectiveMass": 10,
+                "MHT": 8, "LeadJetPt": 4}
+
+    log = False
+    log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
+    for v, njet, btag in product(plot_vars, n_j, n_b):
+        if v in rebin_d:
+            rebin = rebin_d[v]
+        else:
+            rebin = 2
+        if v in log_these:
+            log = True
+        else:
+            log = False
+        print v, njet, btag, HTbins
+        # plot = Ratio_Plot(v, njet, btag, ht, rebin, log)
+        # plot.save()
+
+
 if __name__ == "__main__":
     print "Making lots of data VS bg plots..."
     make_plot_bins(plot_vars)
+    # do_all_the_plots()
