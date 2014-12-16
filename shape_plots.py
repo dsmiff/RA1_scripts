@@ -35,9 +35,10 @@ ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/"  
 
 # Variable(s) you want to plot
 # "MHT", "AlphaT", "Meff", "dPhi*", "jet variables", "MET (corrected)", "MHT/MET (corrected)", "Number_Good_vertices",
-plot_vars = ["Number_Btags", "AlphaT", "JetMultiplicity", "LeadJetPt", "LeadJetEta",
+plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
-             "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass", "Number_Good_verticies"][1:]
+             "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass",
+             "Number_Good_verticies", "JetMultiplicity"][13:14]
 
 # Where you want to store plots
 # And what you want to call the plots - will be out_dir/out_stem_<var>_<njet>_<btag>_<htbin>.pdf
@@ -124,14 +125,14 @@ class Ratio_Plot():
         return htstring
 
 
-    def save(self, odir=None, name=None):
+    def save(self, odir=out_dir, name=None):
         self.c.cd()
         if not name:
             # check outdir exists
-            opath = os.path.abspath(out_dir)
+            opath = os.path.abspath(odir)
             if not os.path.isdir(opath):
                 os.makedirs(opath)
-            self.c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (out_dir, out_stem, self.var, self.njet, self.btag, self.htstring))
+            self.c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (odir, out_stem, self.var, self.njet, self.btag, self.htstring))
         else:
             self.c.SaveAs(name)
 
@@ -388,10 +389,10 @@ class Ratio_Plot():
                                                      sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     print p, MC_signal_tmp.Integral()
                     if not hist_mc_signal:
-                        hist_mc_signal = MC_signal_tmp#.Clone()
+                        hist_mc_signal = MC_signal_tmp.Clone()
                     else:
-                        # hist_mc_signal.Add(MC_signal_tmp.Clone())
-                        hist_mc_signal.Add(MC_signal_tmp)
+                        hist_mc_signal.Add(MC_signal_tmp.Clone())
+                        # hist_mc_signal.Add(MC_signal_tmp)
 
                 print "Total MC signal region:", hist_mc_signal.Integral()
 
@@ -403,11 +404,11 @@ class Ratio_Plot():
                                                    sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     print p, MC_ctrl_tmp.Integral()
                     if not hist_mc_control:
-                        # hist_mc_control = MC_ctrl_tmp.Clone()
-                        hist_mc_control = MC_ctrl_tmp
+                        hist_mc_control = MC_ctrl_tmp.Clone()
+                        # hist_mc_control = MC_ctrl_tmp
                     else:
-                        # hist_mc_control.Add(MC_ctrl_tmp.Clone())
-                        hist_mc_control.Add(MC_ctrl_tmp)
+                        hist_mc_control.Add(MC_ctrl_tmp.Clone())
+                        # hist_mc_control.Add(MC_ctrl_tmp)
 
                 print "Total MC control region:", hist_mc_control.Integral()
 
@@ -617,7 +618,7 @@ class Ratio_Plot():
         #     result = self.hist_ratio.Fit("fitfn", "+")
 
 
-def make_plot_bins(var):
+def make_plot_bins(var):#, njet, nbtag, ht):
     """
     For a given variable, makes data VS background plots for all the
     relevant HT, Njets, Nbtag bins
@@ -642,6 +643,7 @@ def make_plot_bins(var):
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
         # plot = Ratio_Plot(v, "le3j", "eq0b", ["375_475"], rebin, log)
+        # plot = Ratio_Plot(v, njet, btag, ht, rebin, log)
         # plot.save()
 
 
@@ -717,7 +719,7 @@ def make_plot_bins(var):
     # plot.save()
 
 
-def do_all_the_plots():
+def do_all_plots_HT_excl():
     """
     The big enchilada
     """
@@ -733,19 +735,60 @@ def do_all_the_plots():
                 "MHT": 4}
     log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets"] #, "HT"]:
 
-    for v, njet, btag, ht in product(plot_vars, n_j, n_b, HTbins):
-        if v in rebin_d:
-            rebin = rebin_d[v]
-        else:
-            rebin = 2
-        if v in log_these:
-            log = True
-        else:
-            log = False
+    # for v in plot_vars:
+    for njet, btag, ht in product(n_j, n_b, HTbins):
+        # if v in rebin_d:
+        #     rebin = rebin_d[v]
+        # else:
+        #     rebin = 2
+        # if v in log_these:
+        #     log = True
+        # else:
+        #     log = False
 
-        print  v, njet, btag, [ht]
-        plot = Ratio_Plot(v, njet, btag, [ht], rebin, log)
-        plot.save()
+        # print  v, njet, btag, [ht]
+        # plot = Ratio_Plot(v, njet, btag, [ht], rebin, log)
+        outd = "%s/%s_%s_%s" %(out_dir, njet, btag, ht)
+        # plot.save(odir=outd)
+        plot = Ratio_Plot("Number_Btags", njet, btag, [ht], 1, False)
+        plot.save(odir=outd)
+        plot = Ratio_Plot("AlphaT", njet, btag, [ht], alphaT_bins, True)
+        plot.save(odir=outd)
+        # plot = Ratio_Plot("LeadJetPt", njet, btag, [ht], 2, False)
+        # plot.save(odir=outd)
+        plot = Ratio_Plot("LeadJetEta", njet, btag, [ht], 2, False)
+        plot.save(odir=outd)
+
+        plot = Ratio_Plot("SecondJetPt", njet, btag, [ht], 1, False)
+        plot.save(odir=outd)
+        # plot = Ratio_Plot("SecondJetEta", njet, btag, [ht], 2, False)
+        # plot.save(odir=outd)
+        plot = Ratio_Plot("HT", njet, btag, [ht], 1, False)
+        plot.save(odir=outd)
+        plot = Ratio_Plot("MHT", njet, btag, [ht], 4, False)
+        plot.save(odir=outd)
+        # plot = Ratio_Plot("MET_Corrected", njet, btag, [ht], 8, False)
+        # plot.save(odir=outd)
+
+        # plot = Ratio_Plot("ComMinBiasDPhi_acceptedJets", njet, btag, [ht], 10, True)
+        # plot.save(odir=outd)
+        plot = Ratio_Plot("MHTovMET", njet, btag, [ht], 1, False)
+        plot.save(odir=outd)
+        plot = Ratio_Plot("EffectiveMass", njet, btag, [ht], 5, False)
+        plot.save(odir=outd)
+
+        # plot = Ratio_Plot("Number_Good_verticies", njet, btag, [ht], 1, False)
+        # plot.save(odir=outd)
+        plot = Ratio_Plot("JetMultiplicity", njet, btag, [ht], 1, False)
+        plot.save(odir=outd)
+
+
+def do_all_plots_HT_incl():
+
+    # Custom bins for AlphaT per Rob's suggestion
+    b1 = np.arange(0.5, 1.0, 0.05)
+    b2 = np.arange(1.0, 4.5, 0.5)
+    alphaT_bins = np.concatenate((b1, b2))
 
     # inclusive HT
     rebin = 2
@@ -766,11 +809,13 @@ def do_all_the_plots():
         else:
             log = False
         print v, njet, btag, HTbins
-        # plot = Ratio_Plot(v, njet, btag, ht, rebin, log)
-        # plot.save()
+        plot = Ratio_Plot(v, njet, btag, HTbins, rebin, log)
+        outd = "%s/%s_%s_%s" %(out_dir, njet, btag, "375_Inf")
+        plot.save(odir=outd)
 
 
 if __name__ == "__main__":
     print "Making lots of data VS bg plots..."
     # make_plot_bins(plot_vars)
-    do_all_the_plots()
+    do_all_plots_HT_excl()
+    # do_all_plots_HT_incl()
