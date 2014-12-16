@@ -9,28 +9,37 @@ processes_mc_signal_le1b = {"OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'Sing
                             "DiMuon": ['Zinv']}
 
 c = r.TCanvas()
+c.SetLogy()
+
+folder = "/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/"
+njet = "ge4j"
+btag = "eq0b"
+htbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
+          "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"][4:5]
+
 
 # Data in SR
-had_data = grabr.grab_plots(f_path="/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/Had_Data.root",  sele = "Had", h_title = "ComMinBiasDPhi_acceptedJets", njet = "le3j",
-                            btag = "eq0b", ht_bins = ["375_475"])
+had_data = grabr.grab_plots(f_path="%s/Had_Data.root" % folder,
+                            sele = "Had", h_title = "ComMinBiasDPhi_acceptedJets", njet = njet,
+                            btag = btag, ht_bins = htbins)
 had_data.Rebin(10)
 had_data.Draw("HISTE")
 print had_data.Integral()
 c.SaveAs("data_had.pdf")
 
 # Data in OneMu
-mu_data = grabr.grab_plots(f_path="/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/Muon_Data.root",
-                            sele = "OneMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = "le3j",
-                            btag = "eq0b", ht_bins = ["375_475"])
+mu_data = grabr.grab_plots(f_path="%s/Muon_Data.root" % folder,
+                            sele = "OneMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = njet,
+                            btag = btag, ht_bins = htbins)
 mu_data.Sumw2()
 mu_data.Rebin(10)
 mu_data.Draw("HISTE")
 c.SaveAs("data_onemu.pdf")
 
 # Data in DiMu
-dimu_data = grabr.grab_plots(f_path="/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/Muon_Data.root",
-                            sele = "DiMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = "le3j",
-                            btag = "eq0b", ht_bins = ["375_475"])
+dimu_data = grabr.grab_plots(f_path="%s/Muon_Data.root" % folder,
+                            sele = "DiMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = njet,
+                            btag = btag, ht_bins = htbins)
 dimu_data.Rebin(10)
 c.SetLogy()
 dimu_data.Draw("HISTE")
@@ -48,9 +57,9 @@ for h in [had_data, mu_data, dimu_data]:
 mc_had = None
 for p in processes_mc_signal_le1b["OneMuon"]:
     print p
-    h = grabr.grab_plots(f_path="/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/Had_%s.root" % p,
-                            sele = "Had", h_title = "ComMinBiasDPhi_acceptedJets", njet = "le3j",
-                            btag = "eq0b", ht_bins = ["375_475"])
+    h = grabr.grab_plots(f_path="%s/Had_%s.root" % (folder, p),
+                            sele = "Had", h_title = "ComMinBiasDPhi_acceptedJets", njet = njet,
+                            btag = btag, ht_bins = htbins)
     h.Sumw2()
     h.Rebin(10)
     if not mc_had:
@@ -62,9 +71,9 @@ mc_had_noZinv = mc_had.Clone()
 mc_had_noZinv.Draw("HISTE")
 c.SaveAs("mc_had_noZinv.pdf")
 
-mc_had_zinv = grabr.grab_plots(f_path="/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/Had_Zinv.root",
-                            sele = "Had", h_title = "ComMinBiasDPhi_acceptedJets", njet = "le3j",
-                            btag = "eq0b", ht_bins = ["375_475"])
+mc_had_zinv = grabr.grab_plots(f_path="%s/Had_Zinv.root" % folder,
+                            sele = "Had", h_title = "ComMinBiasDPhi_acceptedJets", njet = njet,
+                            btag = btag, ht_bins = htbins)
 mc_had_zinv.Sumw2()
 mc_had_zinv.Rebin(10)
 mc_had_zinv.Draw("HISTE")
@@ -83,9 +92,9 @@ c.SaveAs("both_had.pdf")
 mc_onemu = None
 for p in processes_mc_ctrl:
     print p
-    h = grabr.grab_plots(f_path="/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/Muon_%s.root" % p,
-                            sele = "OneMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = "le3j",
-                            btag = "eq0b", ht_bins = ["375_475"])
+    h = grabr.grab_plots(f_path="%s/Muon_%s.root" % (folder,p),
+                            sele = "OneMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = njet,
+                            btag = btag, ht_bins = htbins)
     h.Sumw2()
     h.Rebin(10)
     if not mc_onemu:
@@ -100,9 +109,9 @@ c.SaveAs("mc_onemu.pdf")
 mc_dimu = None
 for p in processes_mc_ctrl:
     print p
-    h = grabr.grab_plots(f_path="/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/Muon_%s.root" % p,
-                            sele = "DiMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = "le3j",
-                            btag = "eq0b", ht_bins = ["375_475"])
+    h = grabr.grab_plots(f_path="%s/Muon_%s.root" % (folder,p),
+                            sele = "DiMuon", h_title = "ComMinBiasDPhi_acceptedJets", njet = njet,
+                            btag = btag, ht_bins = htbins)
     h.Sumw2()
     h.Rebin(10)
     if not mc_dimu:
