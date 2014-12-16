@@ -38,7 +38,7 @@ ROOTdir = "/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/"  
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
              "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass",
-             "Number_Good_verticies", "JetMultiplicity"][13:14]
+             "Number_Good_verticies", "JetMultiplicity"]
 
 # Where you want to store plots
 # And what you want to call the plots - will be out_dir/out_stem_<var>_<njet>_<btag>_<htbin>.pdf
@@ -642,9 +642,9 @@ def make_plot_bins(var):#, njet, nbtag, ht):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
-        # plot = Ratio_Plot(v, "le3j", "eq0b", ["375_475"], rebin, log)
-        # plot = Ratio_Plot(v, njet, btag, ht, rebin, log)
-        # plot.save()
+        plot = Ratio_Plot(v, "le3j", "eq1b", ["875_975"], rebin, log)
+        outd = "%s/%s_%s_%s" %(out_dir, "le3j", "eq1b", "875_975")
+        plot.save(odir=outd)
 
 
     # For ge4j cos the binning is diff in cases...
@@ -661,7 +661,8 @@ def make_plot_bins(var):#, njet, nbtag, ht):
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
         # plot = Ratio_Plot(v, "ge4j", "eq0b", ["375_475"], rebin, log)
-        # plot.save()
+        # outd = "%s/%s_%s_%s" %(out_dir, "ge4j", "eq0b", "375_475")
+        # plot.save(odir=outd)
 
 
     # For inclusive HT
@@ -678,15 +679,10 @@ def make_plot_bins(var):#, njet, nbtag, ht):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]:
             log = True
-        plot = Ratio_Plot(v, "le3j", "eq0b", HTbins, rebin, log)
-        plot.save()
+        # plot = Ratio_Plot(v, "le3j", "eq0b", HTbins, rebin, log)
+        # plot.save()
         # plot = Ratio_Plot(v, "ge4j", "eq0b", HTbins, rebin, log)
         # plot.save()
-
-    # plot = Ratio_Plot("SecondJetEta", "le3j", "eq0b", HTbins, 2, False)
-    # plot.save()
-    # plot = Ratio_Plot("HT", "le3j", "eq0b", HTbins, 5, True)
-    # plot.save()
 
     # Testing
     # plot = Ratio_Plot("AlphaT", "le3j", "eq0b", "375_475", 20, True)
@@ -816,6 +812,6 @@ def do_all_plots_HT_incl():
 
 if __name__ == "__main__":
     print "Making lots of data VS bg plots..."
-    # make_plot_bins(plot_vars)
-    do_all_plots_HT_excl()
+    make_plot_bins(plot_vars)
+    # do_all_plots_HT_excl()
     # do_all_plots_HT_incl()
