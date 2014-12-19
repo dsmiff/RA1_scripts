@@ -98,7 +98,6 @@ class Ratio_Plot():
             self.c.SaveAs(name)
 
 
-
     def color_hist(self, hist, line_color, fill_color, marker_color):
         """
         Set marker/line/fill color for histogram

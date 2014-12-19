@@ -148,9 +148,9 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
             if "SMS" not in f_path.split("/")[-1]:
                 h.Scale( sb_corr(f_path.split("/")[-1].split("_")[1].split(".")[0]) )
             h.Scale( lumi(sele) )
-        c1 = r.TCanvas()
-        h.Draw()
-        c1.SaveAs("debug.pdf")
+        # c1 = r.TCanvas()
+        # h.Draw()
+        # c1.SaveAs("debug.pdf")
         if not h_total:
             h_total = h.Clone()
         else:
