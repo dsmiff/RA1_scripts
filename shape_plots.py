@@ -51,6 +51,7 @@ ht_scheme = ["incl", "excl"][0]  # option for individual bin, or inclusive - not
 n_j = ["le3j", "ge4j", "ge2j"][:2]
 n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
 
+sel=["OneMuon", "DiMuon", "Had"]
 # # MC processes that go into transfer factors
 # processes_mc_ctrl = ['DY', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']
 
@@ -83,6 +84,7 @@ def make_plot_bins(var):#, njet, nbtag, ht):
 
 
     # ONLY DO ONE OF THE FOLLOWING - IF YOU TRY AND DO ALL IT'LL SEGFAULT
+    # for v, njet, btag, ht in product(var, n_j, n_b, HTbins):
     for v in var:
         print "Doing plots for", v
         rebin = 2
@@ -95,11 +97,16 @@ def make_plot_bins(var):#, njet, nbtag, ht):
         log = False
         if v in ["AlphaT", "ComMinBiasDPhi_acceptedJets"]: #, "HT"]:
             log = True
-        # plot = Ratio_Plot(v, "le3j", "eq0b", ["325_375"], rebin, log)
-        # outd = "%s/%s_%s_%s" %(out_dir, "le3j", "eq0b", "325_375")
-        # plot.save(odir=outd)
-
-        # plot = Ratio_Plot(v, "le3j", "eq1b", ["675_775"], rebin, log)
+        plot = Ratio_Plot(ROOTdir, "plot", v, "le3j", "eq0b", ["325_375"], rebin, log)
+        # print plot.hist_data_signal
+        print "YO"
+        plot.make_plots()
+        outd = "%s/%s_%s_%s" %(out_dir, "le3j", "eq0b", "325_375")
+        plot.save(odir=outd)
+        # dave = grabr.grab_plots("/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/Muon_Data.root",sele="OneMuon", h_title=v, njet=njet, btag=btag, ht_bins=ht)
+        # print dave.GetName()
+        # plot = Ratio_Plot(ROOTdir, "plot", v, "le3j", "eq1b", ["675_775"], rebin, log)
+        # plot.make_plots()
         # outd = "%s/%s_%s_%s" %(out_dir, "le3j", "eq1b", "675_775")
         # plot.save(odir=outd)
 
@@ -145,10 +152,10 @@ def make_plot_bins(var):#, njet, nbtag, ht):
         njet = "ge4j"
         btag = "eq0b"
         counter += 1
-        plot = Ratio_Plot(ROOTdir, "plot", v, njet, btag, HTbins, rebin, log)
-        plot.make_plots()
-        outd = "%s/%s_%s_%s" %(out_dir, njet, btag, "200_Inf")
-        plot.save(odir=outd)
+        # plot = Ratio_Plot(ROOTdir, "plot", v, njet, btag, HTbins, rebin, log)
+        # plot.make_plots()
+        # outd = "%s/%s_%s_%s" %(out_dir, njet, btag, "200_Inf")
+        # plot.save(odir=outd)
         # del plot
         # print counter
 

@@ -47,44 +47,42 @@ out_stem = "plot"
 
 # Define region bins
 HTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
-          "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"][3:]
+          "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"]
 # n_j = ["le3j", "ge4j", "ge2j"][:2]
 # n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
 
 
-def do_all_plots_HT_incl(var="AlphaT", njet="le3j", btag="eq0b"):
+def do_all_plots_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
 
     # Custom bins for AlphaT per Rob's suggestion
     b1 = np.arange(0.5, 1.0, 0.05)
     b2 = np.arange(1.0, 4.5, 0.5)
     alphaT_bins = np.concatenate((b1, b2))
 
-    # inclusive HT
-    rebin = 2
+    # exclusive HT bins
     rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
                 "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
-                "MET_Corrected": 8, "HT": 5, "SecondJetPt": 4, "EffectiveMass": 10,
-                "MHT": 8, "LeadJetPt": 4}
+                "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 5,
+                "MHT": 4}
+    log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets"] #, "HT"]:
 
-    log = False
-    log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
+    for ht in HTbins:
+        if var in rebin_d:
+            rebin = rebin_d[var]
+        else:
+            rebin = 2
 
-    # for v in plot_vars:
-    if var in rebin_d:
-        rebin = rebin_d[var]
-    else:
-        rebin = 2
-    if var in log_these:
-        log = True
-    else:
-        log = False
-    print var, njet, btag, HTbins
-    plot = Ratio_Plot(ROOTdir, "plot", var, njet, btag, HTbins, rebin, log)
-    plot.make_plots()
-    outd = "%s/%s_%s_%s" %(out_dir, njet, btag, "375_Inf")
-    plot.save(odir=outd)
+        if var in log_these:
+            log = True
+        else:
+            log = False
+
+        plot = Ratio_Plot(ROOTdir, out_stem, var, njet, btag, [ht], rebin, log)
+        plot.make_plots()
+        outd = "%s/%s_%s_%s" %(out_dir, njet, btag, ht)
+        plot.save(odir=outd)
 
 
 if __name__ == "__main__":
-    print "Making lots of data VS bg plots for inclusive HT..."
-    do_all_plots_HT_incl(sys.argv[1], sys.argv[2], sys.argv[3])
+    print "Making lots of data VS bg plots for exclusive HT bins..."
+    do_all_plots_HT_excl(sys.argv[1], sys.argv[2], sys.argv[3])

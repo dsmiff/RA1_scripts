@@ -41,7 +41,7 @@ class Ratio_Plot():
         self.var = var
         self.njet = njet
         self.btag = btag
-        self.htbins = htbins
+        self.htbins = htbins  # can be single bin or many
         self.htstring = self.make_ht_string(htbins)
         self.rebin = rebin
         self.log = log
@@ -64,13 +64,52 @@ class Ratio_Plot():
         self.stdtxt = self.make_standard_text()
         self.cuttxt = self.make_bin_text(custom="#alpha_{T} > 0.53 in signal region")
         self.leg = self.make_legend()
-        self.c.cd()
 
-        self.make_hists()
+        # self.make_hists()
+        # self.check_null()
+
+    def __del__(self):
+        # self.hist_data_signal.IsA().Destructor(self.hist_data_signal)
+        print "Cleaned up my shit", self.hist_data_signal
+        for h in self.component_hists:
+            del h
+        del self.shape_stack
+        del self.error_hists_stat
+        del self.error_hists_stat_syst
+        del self.up
+        del self.dp
+        del self.c
+
+
+    def check_null(self):
+        print self.hist_data_signal
+        if not self.hist_data_signal:
+            raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
+
+        print self.shape_stack
+        if not self.shape_stack:
+            raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
+
+        for i in self.component_hists:
+            print i
+            if i is None:
+                raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
+
+        for i in self.error_hists_stat:
+            print i
+            if i is None:
+                raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
+
+        for i in self.error_hists_stat_syst:
+            print i
+            if i is None:
+                raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
 
 
     def make_plots(self):
+        self.make_hists()
         # Now make plots
+        self.check_null()
         self.make_main_plot(self.up)
         self.c.cd()
         self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1], self.error_hists_stat[-1], self.error_hists_stat_syst[-1])
@@ -350,9 +389,9 @@ class Ratio_Plot():
                                                      sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     print p, MC_signal_tmp.Integral()
                     if not hist_mc_signal:
-                        hist_mc_signal = MC_signal_tmp.Clone()
+                        hist_mc_signal = MC_signal_tmp
                     else:
-                        hist_mc_signal.Add(MC_signal_tmp.Clone())
+                        hist_mc_signal.Add(MC_signal_tmp)
                         # hist_mc_signal.Add(MC_signal_tmp)
 
                 print "Total MC signal region:", hist_mc_signal.Integral()
@@ -365,10 +404,10 @@ class Ratio_Plot():
                                                    sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     print p, MC_ctrl_tmp.Integral()
                     if not hist_mc_control:
-                        hist_mc_control = MC_ctrl_tmp.Clone()
+                        hist_mc_control = MC_ctrl_tmp
                         # hist_mc_control = MC_ctrl_tmp
                     else:
-                        hist_mc_control.Add(MC_ctrl_tmp.Clone())
+                        hist_mc_control.Add(MC_ctrl_tmp)
                         # hist_mc_control.Add(MC_ctrl_tmp)
 
                 print "Total MC control region:", hist_mc_control.Integral()
@@ -425,11 +464,11 @@ class Ratio_Plot():
         makes data VS background plot, where BG is from data control regions.
         Lots of ugly ROOT hacks in here (axis ranges, etc)
         """
+        self.c.cd()
         pad.Draw()
         pad.cd()
-        self.hist_data_signal.SetBinErrorOption(r.TH1.kPoisson)
+        # self.hist_data_signal.SetBinErrorOption(r.TH1.kPoisson)
         self.style_hist(self.hist_data_signal, "Data")
-
         # Make stack of backgrounds, and put error bands on each contribution:
         # There is a ROOT bug whereby if you try and make copies of the hists,
         # put into a THStack, and tell it to plot with E2 and set a fill style
@@ -510,13 +549,15 @@ class Ratio_Plot():
             self.error_hists_stat[-1].Draw("E2 SAME")
             self.error_hists_stat_syst[-1].Draw("E2 SAME")
         self.hist_data_signal.Draw("SAME")  # data points ontop of everything
-        pad.RedrawAxis()  # important to put axis on top of all plots
+        # pad.RedrawAxis()  # important to put axis on top of all plots
+        r.gPad.RedrawAxis()
         self.title_axes(self.hist_data_signal, self.var, "Events")
         self.title_axes(self.shape_stack.GetHistogram(), self.var, "Events")
         self.leg.Draw()
         self.stdtxt.Draw("SAME")
         self.cuttxt.Draw("SAME")
-
+        """
+        """
 
     def make_ratio_plot(self, pad, h_data, h_mc, h_mc_stat=None, h_mc_stat_syst=None, fit=True):
         """
