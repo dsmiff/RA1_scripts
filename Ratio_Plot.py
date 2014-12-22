@@ -291,7 +291,7 @@ class Ratio_Plot():
         """
         Generate label of which bin
         """
-        t = r.TPaveText(0.1, 0.91, 0.9, 0.95, "NDC")
+        t = r.TPaveText(0.1, 0.91, 0.9, 0.95, "NDC NB")
         b_str = grabr.btag_string(self.btag) if grabr.btag_string(self.btag) else "geq 0 btag"
         if custom:
             tt = t.AddText("%s, %s, HT bin %s, %s" % (self.njet, b_str, self.htstring, custom))
@@ -356,6 +356,7 @@ class Ratio_Plot():
         cc.cd()
         cc.SetLogy(self.log)
         h.Draw("HISTE")
+        self.cuttxt.Draw("")
         # make folder for this var
         odir = "%s/%s" % (self.outdir, self.var)
         check_dir_exists(odir)
