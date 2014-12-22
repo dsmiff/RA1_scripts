@@ -30,12 +30,20 @@ r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 # r.TH1.AddDirectory(r.kFALSE)
 
-# input files & output directories
-ROOTdir, out_dir = [
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0"],  #re-run
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1", "./01Dec_aT_0p53_globalAlphaT_v1/"],  # alphaT in control regions as well
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/"]  # dPhi* <0.3 in SR
-][0]
+# Define region bins
+allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
+          "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"][:]
+# n_j = ["le3j", "ge4j", "ge2j"][:2]
+# n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
+
+
+# input files, output directories, which HTbins to run over
+ROOTdir, out_dir, HTbins = [
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0", allHTbins[:]],  #re-run
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[:]],  # muon in jet
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1", "./01Dec_aT_0p53_globalAlphaT_v1/", allHTbins[3:]],  # alphaT in control regions as well
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/", allHTbins[:]]  # dPhi* <0.3 in SR
+][1]
 
 # Variable(s) you want to plot
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
@@ -45,46 +53,33 @@ plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
 
 out_stem = "plot"
 
-# Define region bins
-HTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
-          "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"][3:]
-# n_j = ["le3j", "ge4j", "ge2j"][:2]
-# n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
+# Custom bins for AlphaT per Rob's suggestion
+b1 = np.arange(0.5, 1.0, 0.05)
+b2 = np.arange(1.0, 4.5, 0.5)
+alphaT_bins = np.concatenate((b1, b2))
+
+rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
+            "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
+            "MET_Corrected": 8, "HT": 5, "SecondJetPt": 4, "EffectiveMass": 10,
+            "MHT": 8, "LeadJetPt": 4}
+
+log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
 
 
 def do_all_plots_HT_incl(var="AlphaT", njet="le3j", btag="eq0b"):
-
-    # Custom bins for AlphaT per Rob's suggestion
-    b1 = np.arange(0.5, 1.0, 0.05)
-    b2 = np.arange(1.0, 4.5, 0.5)
-    alphaT_bins = np.concatenate((b1, b2))
-
     # inclusive HT
-    rebin = 2
-    rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-                "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
-                "MET_Corrected": 8, "HT": 5, "SecondJetPt": 4, "EffectiveMass": 10,
-                "MHT": 8, "LeadJetPt": 4}
-
-    log = False
-    log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
-
-    # for v in plot_vars:
-    if var in rebin_d:
-        rebin = rebin_d[var]
-    else:
-        rebin = 2
-    if var in log_these:
-        log = True
-    else:
-        log = False
+    rebin = rebin_d[var] if var in rebin_d else 2
+    log = True if var in log_these else False
     print var, njet, btag, HTbins
-    plot = Ratio_Plot(ROOTdir, "plot", var, njet, btag, HTbins, rebin, log)
+    plot = Ratio_Plot(ROOTdir, out_dir, var, njet, btag, HTbins, rebin, log)
     plot.make_plots()
-    outd = "%s/%s_%s_%s" %(out_dir, njet, btag, "375_Inf")
-    plot.save(odir=outd)
+    plot.save()
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print "Run using:"
+        print "python shape_plots_inclHT.py <variable> <njet> <btag>"
+        exit(1)
     print "Making lots of data VS bg plots for inclusive HT..."
-    do_all_plots_HT_incl(sys.argv[1], sys.argv[2], sys.argv[3])
+    do_all_plots_HT_incl(var=sys.argv[1], njet=sys.argv[2], btag=sys.argv[3])

@@ -30,14 +30,21 @@ tf_systs = {
     "ge4j": {"200_275": 6, "275_325": 6, "325_375": 11, "375_475": 11, "475_575": 11, "575_675": 18, "675_775": 18, "775_875": 20, "875_975": 20, "975_1075": 26, "1075": 26}
 }
 
+
+def check_dir_exists(d):
+    opath = os.path.abspath(d)
+    if not os.path.isdir(opath):
+        os.makedirs(opath)
+
 class Ratio_Plot():
     """
-    Class to make a ratio plot
+    Class to make plot from data, BG shapes from data, and a neat ratio plot below that.
+    Well, it would be neat if it didn't crash sometimes.
     """
 
-    def __init__(self, ROOTdir, out_stem, var, njet, btag, htbins, rebin, log):
+    def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log):
         self.ROOTdir = ROOTdir
-        self.out_stem = out_stem
+        self.out_stem = "plot"
         self.var = var
         self.njet = njet
         self.btag = btag
@@ -47,10 +54,10 @@ class Ratio_Plot():
         self.log = log
         self.autorange_x = True  # to auto set x range for non-empty range
         self.autorange_y = True  # to auto set y range for sensible range
-        self.c = r.TCanvas()
-        self.up = r.TPad("u","",0.01,0.25,0.99,0.99)
-        self.dp = r.TPad("d","",0.01,0.01,0.99,0.25)
-        self.dp.SetBottomMargin(1.3*self.dp.GetBottomMargin())
+        self.c = r.TCanvas("c")
+        self.up = r.TPad("u", "", 0.01, 0.25, 0.99, 0.99)
+        self.dp = r.TPad("d", "", 0.01, 0.01, 0.99, 0.25)
+        self.dp.SetBottomMargin(1.3 * self.dp.GetBottomMargin())
         self.hist_data_signal = None
         self.component_hists = []
         self.transfer_factors = {}
@@ -64,9 +71,10 @@ class Ratio_Plot():
         self.stdtxt = self.make_standard_text()
         self.cuttxt = self.make_bin_text(custom="#alpha_{T} > 0.53 in signal region")
         self.leg = self.make_legend()
+        self.plot_components = False  # plots ALL components, for debugging
+        self.outdir = "%s/%s_%s_%s" % (out_dir, njet, btag, self.htstring)  # dir for putting all plots
+        check_dir_exists(self.outdir)
 
-        # self.make_hists()
-        # self.check_null()
 
     def __del__(self):
         # self.hist_data_signal.IsA().Destructor(self.hist_data_signal)
@@ -107,6 +115,10 @@ class Ratio_Plot():
 
 
     def make_plots(self):
+        """
+        Main routine for this class to make the required hists,
+        then style and plots them, then draw a ratio plot below.
+        """
         self.make_hists()
         # Now make plots
         self.check_null()
@@ -117,24 +129,30 @@ class Ratio_Plot():
 
 
     def make_ht_string(self, htbins):
-        htstring = htbins[0].split("_")[0] + "_"
-        if (htbins[-1] != "1075"):
-            htstring += htbins[-1].split("_")[-1]
+        """
+        Make string out of HT bin(s)
+        """
+        # test if list or string
+        if hasattr(htbins, "__iter__"):
+            htstring = htbins[0].split("_")[0] + "_"
+            if (htbins[-1] != "1075"):
+                htstring += htbins[-1].split("_")[-1]
+            else:
+                htstring += "Inf"
         else:
-            htstring += "Inf"
+            htstring = htbins
         return htstring
 
 
     def save(self, odir=None, name=None):
+        """
+        Save the whole plot to file, using some auto directory structure if needed
+        """
         self.c.cd()
         if not name:
-            # check outdir exists
-            opath = os.path.abspath(odir)
-            if not os.path.isdir(opath):
-                os.makedirs(opath)
-            self.c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (odir, self.out_stem, self.var, self.njet, self.btag, self.htstring))
+            self.c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (self.outdir, self.out_stem, self.var, self.njet, self.btag, self.htstring))
         else:
-            self.c.SaveAs(name)
+            self.c.SaveAs("%s/%s" %(odir, name))
 
 
     def color_hist(self, hist, line_color, fill_color, marker_color):
@@ -147,6 +165,10 @@ class Ratio_Plot():
 
 
     def rebin_hist(self, hist, rebin=None):
+        """
+        Rebin a histogram either by combining rebin bins together, or by
+        asking for a specific binning (pass list as rebin arg)
+        """
         if not rebin:
             rebin = self.rebin
         if hasattr(rebin, "__len__"):
@@ -165,17 +187,11 @@ class Ratio_Plot():
         """
         Do some aesthetic stylings on hists, & rebin
         """
-        # if hasattr(self.rebin, "__len__"):
-        #     print "we got bins"
-        #     hist = hist.Rebin(len(self.rebin)-1, hist.GetName(), self.rebin)
-        # else:
-        #     hist.Rebin(self.rebin)
-
-        if region == "OneMuon":
+        if "OneMuon" in region:
             self.color_hist(hist, r.kBlack, r.kViolet + 1, r.kViolet + 1)
-        elif region == "DiMuon":
+        elif "DiMuon" in region:
             self.color_hist(hist, r.kBlack, r.kOrange, r.kOrange)
-        elif region == "Data":
+        elif "Data" in region:
             hist.SetMarkerColor(r.kBlack)
             # hist.SetMarkerSize(2)
             hist.SetMarkerStyle(20)
@@ -332,6 +348,21 @@ class Ratio_Plot():
         return xmin, xmax
 
 
+    def plot_component(self, h, name):
+        """
+        Plot h on a separate canvas
+        """
+        cc = r.TCanvas("cc","")
+        cc.cd()
+        cc.SetLogy(self.log)
+        h.Draw("HISTE")
+        # make folder for this var
+        odir = "%s/%s" % (self.outdir, self.var)
+        check_dir_exists(odir)
+        ext = "" if ".pdf" in name else ".pdf"
+        cc.SaveAs("%s/%s%s" % (odir, name, ext))
+
+
     def set_syst_errors(self, h, htbin, njet):
         """
         Turns stat errors into stat+syst errors using LUT at top
@@ -374,6 +405,7 @@ class Ratio_Plot():
                 hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (self.ROOTdir, f_start),
                                                      sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                 hist_data_control.SetName(ctrl)  # for styling later
+                if self.plot_components: self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 print "Data in control reigon:", hist_data_control.Integral()
 
                 # MC in signal region
@@ -394,6 +426,7 @@ class Ratio_Plot():
                         hist_mc_signal.Add(MC_signal_tmp)
                         # hist_mc_signal.Add(MC_signal_tmp)
 
+                if self.plot_components: self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 print "Total MC signal region:", hist_mc_signal.Integral()
 
                 # MC in control region
@@ -411,9 +444,12 @@ class Ratio_Plot():
                         # hist_mc_control.Add(MC_ctrl_tmp)
 
                 print "Total MC control region:", hist_mc_control.Integral()
+                if self.plot_components: self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
+                hist_mc_signal.Divide(hist_mc_control)
+                if self.plot_components: self.plot_component(hist_mc_control, "mc_ratio_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 hist_data_control.Multiply(hist_mc_signal)
-                hist_data_control.Divide(hist_mc_control)
+                if self.plot_components: self.plot_component(hist_data_control, "scaled_data_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 # hist_data_control = self.rebin_hist(hist_data_control) # This segfaults soometimes
 
                 # Calculate syst error on TF for this bin
@@ -556,8 +592,6 @@ class Ratio_Plot():
         self.leg.Draw()
         self.stdtxt.Draw("SAME")
         self.cuttxt.Draw("SAME")
-        """
-        """
 
     def make_ratio_plot(self, pad, h_data, h_mc, h_mc_stat=None, h_mc_stat_syst=None, fit=True):
         """
