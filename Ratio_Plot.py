@@ -355,7 +355,8 @@ class Ratio_Plot():
         cc = r.TCanvas("cc","")
         cc.cd()
         cc.SetLogy(self.log)
-        h.Draw("HISTE")
+        hh = h.Clone()
+        self.rebin_hist(hh).Draw("HISTE")
         self.cuttxt.Draw("")
         # make folder for this var
         odir = "%s/%s" % (self.outdir, self.var)
@@ -448,8 +449,8 @@ class Ratio_Plot():
                 if self.plot_components: self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
                 hist_mc_signal.Divide(hist_mc_control)
-                if self.plot_components: self.plot_component(hist_mc_control, "mc_ratio_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 hist_data_control.Multiply(hist_mc_signal)
+                if self.plot_components: self.plot_component(hist_mc_signal, "mc_ratio_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 if self.plot_components: self.plot_component(hist_data_control, "scaled_data_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 # hist_data_control = self.rebin_hist(hist_data_control) # This segfaults soometimes
 
@@ -594,6 +595,7 @@ class Ratio_Plot():
         self.stdtxt.Draw("SAME")
         self.cuttxt.Draw("SAME")
 
+
     def make_ratio_plot(self, pad, h_data, h_mc, h_mc_stat=None, h_mc_stat_syst=None, fit=True):
         """
         Makes the little data/MC ratio plot
@@ -638,6 +640,8 @@ class Ratio_Plot():
         # And GetXaxis.GetMax/Min doesn't even work, it ignores the fact
         # I've told it to change range
         # Stupid piece of shit
+        #
+        # Actually this still mucks up sometimes
         xmax = r.gPad.GetUxmax()
         self.l = r.TLine(xmin, 1, xmax, 1)
         self.l.SetLineWidth(2)
