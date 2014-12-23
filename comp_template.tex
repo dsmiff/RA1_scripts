@@ -1,0 +1,53 @@
+\documentclass[10pt]{beamer}
+\usetheme{default}
+\usepackage{xcolor}
+\usepackage{pgfpages}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{fontspec}
+\setmainfont{Source Sans Pro}
+\setsansfont{Source Sans Pro}
+\setmonofont{Menlo}
+\pgfpagesuselayout{resize to}[a4paper,landscape,border shrink=5mm]
+\setbeamertemplate{navigation symbols}{} 
+\setbeamerfont{frametitle}{size=\fontsize{12pt}{8pt}}
+\setbeamertemplate{footline}[frame number]
+\definecolor{dgreen}{rgb}{0.,0.6,0.}
+\setbeamersize{text margin left=0mm, text margin right=0mm}
+
+
+% --- the presentation begins here ----------------%
+%\AtBeginSection[]
+%{
+%   \begin{frame}
+%   \frametitle{}
+%   \tableofcontents[currentsubsection, 
+%       hideothersubsections, 
+%       sectionstyle=show/shaded, 
+%       subsectionstyle=show/shaded, 
+%]
+%   \end{frame}
+%}
+
+\title{@TITLE}
+\subtitle{@SUBTITLE}
+\author[R. Aggleton]{Robin \& Rob}
+\date{@DATE}
+
+
+\begin{document}
+
+%--- the titlepage frame -------------------------%
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\begin{frame}{Table of Contents}
+    \begin{multicols}{2}
+        \tableofcontents
+    \end{multicols}
+\end{frame}
+
+\input{@FILE}
+
+\end{document}

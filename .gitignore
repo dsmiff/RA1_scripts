@@ -6,3 +6,8 @@
 *.pyc
 *.root
 .idea
+*.aux
+*.toc
+*.snm
+*.nav
+*.log
