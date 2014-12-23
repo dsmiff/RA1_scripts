@@ -28,7 +28,6 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
     allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
                  "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"]
 
-    print hi_ht, lo_ht
     s = 0; e = -2
     for i, htbin in enumerate(allHTbins):
         if htbin.startswith(lo_ht):
@@ -76,9 +75,9 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
         \begin{columns}
             \begin{column}{0.5\textwidth}
                 \begin{center}
-                $Data_{control}$
+                $MC_{signal}$
                 \\
-                \includegraphics[width=0.85\textwidth]{@DATAC}
+                \includegraphics[width=0.85\textwidth]{@MCS}
                 \\
                 $MC_{control}$
                 \\
@@ -88,9 +87,9 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
 
             \begin{column}{0.5\textwidth}
                 \begin{center}
-                $MC_{signal}$
+                $Data_{control}$
                 \\
-                \includegraphics[width=0.85\textwidth]{@MCS}
+                \includegraphics[width=0.85\textwidth]{@DATAC}
                 \\
                 $MC_{ratio} = \frac{MC_{signal}}{MC_{control}}$
                 \\
@@ -170,7 +169,6 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
                 slide = slide.replace("@PLOT%d" % (j+1), "")
             slides.write(slide)
 
-
         # Now go through each HT bin and for each control region, plot data_control,
         # MC_signal/control, MC_ratio (& scaled data?)
         for ht, ctrl in product(HTbins, ctrl_regions):
@@ -183,8 +181,11 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
 
     # Now make the pdf
     # Use lualatex for custom font
+    # Do it twice to get TOC and page num right
+    subprocess.call(["lualatex", "-interaction", "nonstopmode", new_tex_file])
     subprocess.call(["lualatex", "-interaction", "nonstopmode", new_tex_file])
     subprocess.call(["open", new_tex_file.replace(".tex", ".pdf")])
+
 
 if __name__ == "__main__":
 
