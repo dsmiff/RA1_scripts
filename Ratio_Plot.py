@@ -312,7 +312,7 @@ class Ratio_Plot():
         for both h_1 and h_2.
         Plus a bit of padding on the left, and a lot more on the right
         """
-        # Loook for low edge
+        # Look for low edge
         low_1 = -1000000.
         low_2 = -1000000.
         found_low_1 = False
@@ -355,7 +355,10 @@ class Ratio_Plot():
         cc = r.TCanvas("cc","")
         cc.cd()
         cc.SetLogy(self.log)
+        cc.SetTicks()
+        cc.SetGrid()
         hh = h.Clone()
+        self.title_axes(hh, self.var, "Events")
         self.rebin_hist(hh).Draw("HISTE")
         self.cuttxt.Draw("")
         # make folder for this var
@@ -407,6 +410,7 @@ class Ratio_Plot():
                 hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (self.ROOTdir, f_start),
                                                      sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                 hist_data_control.SetName(ctrl)  # for styling later
+                hist_data_control = self.rebin_hist(hist_data_control)
                 if self.plot_components: self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 print "Data in control reigon:", hist_data_control.Integral()
 
@@ -423,9 +427,9 @@ class Ratio_Plot():
                                                      sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     print p, MC_signal_tmp.Integral()
                     if not hist_mc_signal:
-                        hist_mc_signal = MC_signal_tmp
+                        hist_mc_signal = self.rebin_hist(MC_signal_tmp)
                     else:
-                        hist_mc_signal.Add(MC_signal_tmp)
+                        hist_mc_signal.Add(self.rebin_hist(MC_signal_tmp))
                         # hist_mc_signal.Add(MC_signal_tmp)
 
                 if self.plot_components: self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
@@ -439,18 +443,18 @@ class Ratio_Plot():
                                                    sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     print p, MC_ctrl_tmp.Integral()
                     if not hist_mc_control:
-                        hist_mc_control = MC_ctrl_tmp
+                        hist_mc_control = self.rebin_hist(MC_ctrl_tmp)
                         # hist_mc_control = MC_ctrl_tmp
                     else:
-                        hist_mc_control.Add(MC_ctrl_tmp)
+                        hist_mc_control.Add(self.rebin_hist(MC_ctrl_tmp))
                         # hist_mc_control.Add(MC_ctrl_tmp)
 
                 print "Total MC control region:", hist_mc_control.Integral()
                 if self.plot_components: self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
                 hist_mc_signal.Divide(hist_mc_control)
-                hist_data_control.Multiply(hist_mc_signal)
                 if self.plot_components: self.plot_component(hist_mc_signal, "mc_ratio_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                hist_data_control.Multiply(hist_mc_signal)
                 if self.plot_components: self.plot_component(hist_data_control, "scaled_data_%s_%s" % (ctrl, self.make_ht_string(ht)))
                 # hist_data_control = self.rebin_hist(hist_data_control) # This segfaults soometimes
 
@@ -468,12 +472,12 @@ class Ratio_Plot():
 
                 print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
 
-            hist_total = self.rebin_hist(hist_total)
+            # hist_total = self.rebin_hist(hist_total)
             self.component_hists.append(hist_total)
 
             # Do stat+syst err hists for this control region & store (NB cumulative)
-            hist_stat_total = self.rebin_hist(hist_stat_total)
-            hist_syst_total = self.rebin_hist(hist_syst_total)
+            # hist_stat_total = self.rebin_hist(hist_stat_total)
+            # hist_syst_total = self.rebin_hist(hist_syst_total)
 
             self.style_hist_err1(hist_stat_total)
             self.style_hist_err2(hist_syst_total)
