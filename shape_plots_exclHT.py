@@ -1,12 +1,11 @@
 """
-
 This script makes data VS background plots, but gets the backgrounds from
 DATA control region shape, not MC. To do this, we define several control regions
 (for each BG source), use MC to calculate transfer factors, then scale the
 data control region plot by that factor. Oh yeah and whack in stat + syst
 uncertainties, latter from closure tests.
 
-We do this for bins of Njets, Nbtag, HT. And we look at lots of variables.
+We do this for bins of Njets, Nbtag, and inclusive HT. And we look at lots of variables.
 
 And we make it look b-e-a-utiful.
 
@@ -39,7 +38,7 @@ allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
 
 # input files, output directories, HTbins
 ROOTdir, out_dir, HTbins = [
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0", allHTbins[:2]],  #re-run
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0", allHTbins[:]],  #re-run
     ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[:]],  # include muon in Jet
     ["/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1", "./01Dec_aT_0p53_globalAlphaT_v1/", allHTbins[3:]],  # alphaT in control regions as well
     ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/", allHTbins[:]]  # dPhi* <0.3 in SR
@@ -51,24 +50,21 @@ plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass",
              "Number_Good_verticies", "JetMultiplicity"]
 
-out_stem = "plot"
-
 # Custom bins for AlphaT per Rob's suggestion
-b1 = np.arange(0.5, 1.0, 0.05)
-b2 = np.arange(1.0, 4.5, 0.5)
-alphaT_bins = np.concatenate((b1, b2))
+alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 4.5, 0.5)))
 
-# exclusive HT bins
+dphi_bins = np.arange(0.0, 4.1, 0.1) # or 10
+
 rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-            "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
+            "ComMinBiasDPhi_acceptedJets": dphi_bins, "AlphaT": alphaT_bins,
             "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 5,
             "MHT": 4}
-log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets"] #, "HT"]:
+
+log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"] #, "HT"]:
 
 
 def do_all_plots_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
-
-
+    # exclusive HT bins - do one by one
     for ht in HTbins:
         rebin =rebin = rebin_d[var] if var in rebin_d else 2
         log = True if var in log_these else False
@@ -84,4 +80,4 @@ if __name__ == "__main__":
         print "python shape_plots_exclHT.py <variable> <njet> <btag>"
         exit(1)
     print "Making lots of data VS bg plots for exclusive HT bins..."
-    do_all_plots_HT_excl(sys.argv[1], sys.argv[2], sys.argv[3])
+    do_all_plots_HT_excl(var=sys.argv[1], njet=sys.argv[2], btag=sys.argv[3])

@@ -1,5 +1,4 @@
 """
-
 This script makes data VS background plots, but gets the backgrounds from
 DATA control region shape, not MC. To do this, we define several control regions
 (for each BG source), use MC to calculate transfer factors, then scale the
@@ -40,10 +39,10 @@ allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
 # input files, output directories, which HTbins to run over
 ROOTdir, out_dir, HTbins = [
     ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0", allHTbins[:]],  #re-run
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[:]],  # muon in jet
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[3:]],  # muon in jet
     ["/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1", "./01Dec_aT_0p53_globalAlphaT_v1/", allHTbins[3:]],  # alphaT in control regions as well
     ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/", allHTbins[:]]  # dPhi* <0.3 in SR
-][1]
+][0]
 
 # Variable(s) you want to plot
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
@@ -51,26 +50,24 @@ plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass",
              "Number_Good_verticies", "JetMultiplicity"]
 
-out_stem = "plot"
-
 # Custom bins for AlphaT per Rob's suggestion
-b1 = np.arange(0.5, 1.0, 0.05)
-b2 = np.arange(1.0, 4.5, 0.5)
-alphaT_bins = np.concatenate((b1, b2))
+alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 4.5, 0.5)))
+
+dphi_bins = np.arange(0.0, 4.1, 0.1) # or 10
 
 rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-            "ComMinBiasDPhi_acceptedJets": 10, "AlphaT": alphaT_bins,
-            "MET_Corrected": 8, "HT": 5, "SecondJetPt": 4, "EffectiveMass": 10,
-            "MHT": 8, "LeadJetPt": 4}
+            "ComMinBiasDPhi_acceptedJets": dphi_bins, "AlphaT": alphaT_bins,
+            "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 5,
+            "MHT": 4}
 
 log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
 
 
 def do_all_plots_HT_incl(var="AlphaT", njet="le3j", btag="eq0b"):
     # inclusive HT
+    print var, njet, btag, HTbins
     rebin = rebin_d[var] if var in rebin_d else 2
     log = True if var in log_these else False
-    print var, njet, btag, HTbins
     plot = Ratio_Plot(ROOTdir, out_dir, var, njet, btag, HTbins, rebin, log)
     plot.make_plots()
     plot.save()
