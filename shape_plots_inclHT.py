@@ -22,6 +22,8 @@ import os
 import array
 from Ratio_Plot import Ratio_Plot
 import sys
+import make_component_pres as pres
+
 
 r.TH1.SetDefaultSumw2(r.kFALSE)
 r.gStyle.SetOptStat(0)
@@ -44,7 +46,7 @@ ROOTdir, out_dir, HTbins = [
     ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/", allHTbins[:]]  # dPhi* <0.3 in SR
 ][0]
 
-# Variable(s) you want to plot
+# Variable(s) you want to plot - NOT USED, just a reminder
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
              "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass",
@@ -57,8 +59,8 @@ dphi_bins = np.arange(0.0, 4.1, 0.1) # or 10
 
 rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
             "ComMinBiasDPhi_acceptedJets": dphi_bins, "AlphaT": alphaT_bins,
-            "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 5,
-            "MHT": 4}
+            "MET_Corrected": 8, "HT": 10, "LeadJetPt": 5, "SecondJetPt": 5,
+            "EffectiveMass": 10, "MHT": 4}
 
 log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
 
@@ -74,9 +76,12 @@ def do_all_plots_HT_incl(var="AlphaT", njet="le3j", btag="eq0b"):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    print "Making lots of data VS bg plots for inclusive HT..."
+    if len(sys.argv) == 4:
+        do_all_plots_HT_incl(var=sys.argv[1], njet=sys.argv[2], btag=sys.argv[3])
+    elif len(sys.argv) == 1:
+        do_all_plots_HT_incl()
+    else:
         print "Run using:"
         print "python shape_plots_inclHT.py <variable> <njet> <btag>"
         exit(1)
-    print "Making lots of data VS bg plots for inclusive HT..."
-    do_all_plots_HT_incl(var=sys.argv[1], njet=sys.argv[2], btag=sys.argv[3])

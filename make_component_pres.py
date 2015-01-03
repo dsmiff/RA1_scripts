@@ -7,7 +7,7 @@ btag, HT bounds
 from itertools import product
 import subprocess
 import sys
-
+import os
 
 def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_forRobin_v0/",
               var="ComMinBiasDPhi_acceptedJets", njet="ge4j", btag="eq0b", lo_ht="200", hi_ht="Inf"):
@@ -15,8 +15,8 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
     var_safe = var.replace("_", "\_")
 
     template = "comp_template.tex"
-    new_tex_file = "components_%s_%s_%s_%s_%s.tex" % (var, njet, btag, lo_ht, hi_ht)
-    slides_file = "comp_slides_%s_%s_%s_%s_%s.tex" % (var, njet, btag, lo_ht, hi_ht)
+    new_tex_file = "%s/components_%s_%s_%s_%s_%s.tex" % (plot_dir, var, njet, btag, lo_ht, hi_ht)
+    slides_file = "%s/comp_slides_%s_%s_%s_%s_%s.tex" % (plot_dir, var, njet, btag, lo_ht, hi_ht)
     title = "Component slides for $\%sq %s$ jets, %s, $%s \leq HT \leq %s$" %(njet[0:2], njet[2], btag, lo_ht, hi_ht)
     subtitle = "For %s" % var_safe
 
@@ -30,12 +30,8 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
 
     s = 0; e = -2
     for i, htbin in enumerate(allHTbins):
-        if htbin.startswith(lo_ht):
-            print htbin
-            s = i
-        if htbin.endswith(hi_ht):
-            print htbin
-            e = i
+        if htbin.startswith(lo_ht): s = i
+        if htbin.endswith(hi_ht): e = i
 
     HTbins = allHTbins[s:e+1]
     print HTbins
@@ -153,13 +149,13 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
         slides.write(slide)
 
         # Next plot the data VS BG hists for each HT bin
-        slide = six_plot_slide.replace("@SLIDE_TITLE", "%s - individual $H_{T}$ bins" % (var_safe))
+        slide = six_plot_slide.replace("@SLIDE_TITLE", "%s - individual \\texorpdfstring{$H_{T}$}{HT} bins" % (var_safe))
         for i, ht in enumerate(HTbins[:6]):
             slide = slide.replace("@PLOT%d_TITLE" % (i+1), ht.replace("_", " - "))
             slide = slide.replace("@PLOT%d" % (i+1), "%s/%s_%s_%s/plot_%s_%s_%s_%s.pdf" % (plot_dir, njet, btag, ht, var, njet, btag, ht))
         slides.write(slide)
         if len(HTbins) > 6 and len(HTbins) <= 12:
-            slide = six_plot_slide.replace("@SLIDE_TITLE", "%s - individual $H_{T}$ bins" % (var_safe))
+            slide = six_plot_slide.replace("@SLIDE_TITLE", "%s - individual \\texorpdfstring{$H_{T}$}{HT} bins" % (var_safe))
             for i,ht in enumerate(HTbins[6:12]):
                 slide = slide.replace("@PLOT%d_TITLE" % (i+1), ht.replace("_", " - "))
                 slide = slide.replace("@PLOT%d" % (i+1), "%s/%s_%s_%s/plot_%s_%s_%s_%s.pdf" % (plot_dir, njet, btag, ht, var, njet, btag, ht))
@@ -182,9 +178,12 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
     # Now make the pdf
     # Use lualatex for custom font
     # Do it twice to get TOC and page num right
-    subprocess.call(["lualatex", "-interaction", "nonstopmode", new_tex_file])
-    subprocess.call(["lualatex", "-interaction", "nonstopmode", new_tex_file])
+    output = "-output-directory=%s" % os.path.dirname(new_tex_file)
+    subprocess.call(["lualatex", "-interaction", "nonstopmode", output, new_tex_file])
+    subprocess.call(["lualatex", "-interaction", "nonstopmode", output, new_tex_file])
     subprocess.call(["open", new_tex_file.replace(".tex", ".pdf")])
+    # remove all the spurious rubbish
+    [os.remove(new_tex_file.replace(".tex", ext)) for ext in [".out", ".aux", ".log", ".nav", ".snm", ".toc"] if os.path.isfile(new_tex_file.replace(".tex", ext))]
 
 
 if __name__ == "__main__":

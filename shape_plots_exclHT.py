@@ -22,6 +22,8 @@ import os
 import array
 from Ratio_Plot import Ratio_Plot
 import sys
+import make_component_pres as pres
+
 
 r.TH1.SetDefaultSumw2(r.kFALSE)
 r.gStyle.SetOptStat(0)
@@ -44,7 +46,7 @@ ROOTdir, out_dir, HTbins = [
     ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/", allHTbins[:]]  # dPhi* <0.3 in SR
 ][0]
 
-# Variable(s) you want to plot - NOT USED
+# Variable(s) you want to plot - NOT USED, just a reminder
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
              "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass",
@@ -57,8 +59,8 @@ dphi_bins = np.arange(0.0, 4.1, 0.1) # or 10
 
 rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
             "ComMinBiasDPhi_acceptedJets": dphi_bins, "AlphaT": alphaT_bins,
-            "MET_Corrected": 8, "HT": 1, "SecondJetPt": 1, "EffectiveMass": 5,
-            "MHT": 4}
+            "MET_Corrected": 8, "HT": 10, "LeadJetPt": 5, "SecondJetPt": 5,
+            "EffectiveMass": 10, "MHT": 4}
 
 log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"] #, "HT"]:
 
@@ -66,18 +68,26 @@ log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "Second
 def do_all_plots_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
     # exclusive HT bins - do one by one
     for ht in HTbins:
-        rebin =rebin = rebin_d[var] if var in rebin_d else 2
+        rebin = rebin_d[var] if var in rebin_d else 2
         log = True if var in log_these else False
         plot = Ratio_Plot(ROOTdir, out_dir, var, njet, btag, [ht], rebin, log)
         plot.plot_components = True
         plot.make_plots()
         plot.save()
+    # optionally can do component plots as well for this var
+    lo = HTbins[0].split("_")[0]
+    hi = HTbins[-1].split("_")[1] if "_" in HTbins[-1] else "Inf"
+    print "Make component pres"
+    pres.make_pres(plot_dir=out_dir, var=var, njet=njet, btag=btag, lo_ht=lo, hi_ht=hi)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    print "Making lots of data VS bg plots for exclusive HT bins..."
+    if len(sys.argv) == 4:
+        do_all_plots_HT_excl(var=sys.argv[1], njet=sys.argv[2], btag=sys.argv[3])
+    elif len(sys.argv) == 1:
+        do_all_plots_HT_excl()
+    else:
         print "Run using:"
         print "python shape_plots_exclHT.py <variable> <njet> <btag>"
         exit(1)
-    print "Making lots of data VS bg plots for exclusive HT bins..."
-    do_all_plots_HT_excl(var=sys.argv[1], njet=sys.argv[2], btag=sys.argv[3])
