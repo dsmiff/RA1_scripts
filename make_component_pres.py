@@ -15,8 +15,8 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
     var_safe = var.replace("_", "\_")
 
     template = "comp_template.tex"
-    new_tex_file = "%s/components_%s_%s_%s_%s_%s.tex" % (plot_dir, var, njet, btag, lo_ht, hi_ht)
-    slides_file = "%s/comp_slides_%s_%s_%s_%s_%s.tex" % (plot_dir, var, njet, btag, lo_ht, hi_ht)
+    new_tex_file = "%s/%s_%s_%s_%s/components_%s_%s_%s_%s_%s.tex" % (plot_dir, njet, btag, lo_ht, hi_ht, var, njet, btag, lo_ht, hi_ht)
+    slides_file = "%s/%s_%s_%s_%s/comp_slides_%s_%s_%s_%s_%s.tex" % (plot_dir, njet, btag, lo_ht, hi_ht, var, njet, btag, lo_ht, hi_ht)
     title = "Component slides for $\%sq %s$ jets, %s, $%s \leq HT \leq %s$" %(njet[0:2], njet[2], btag, lo_ht, hi_ht)
     subtitle = "For %s" % var_safe
 
@@ -181,6 +181,7 @@ def make_pres(plot_dir="/Users/robina/Dropbox/AlphaT/RA1_scripts/11Dec_aT_0p53_f
     output = "-output-directory=%s" % os.path.dirname(new_tex_file)
     subprocess.call(["lualatex", "-interaction", "nonstopmode", output, new_tex_file])
     subprocess.call(["lualatex", "-interaction", "nonstopmode", output, new_tex_file])
+    # Open the result
     subprocess.call(["open", new_tex_file.replace(".tex", ".pdf")])
     # remove all the spurious rubbish
     [os.remove(new_tex_file.replace(".tex", ext)) for ext in [".out", ".aux", ".log", ".nav", ".snm", ".toc"] if os.path.isfile(new_tex_file.replace(".tex", ext))]
