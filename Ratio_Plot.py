@@ -373,7 +373,11 @@ class Ratio_Plot():
         Turns stat errors into stat+syst errors using LUT at top
         """
         for i in range(1, h.GetNbinsX() + 1):
-            syst =  h.GetBinContent(i) * tf_systs[njet][htbin] / 100.
+            try:
+                syst =  h.GetBinContent(i) * tf_systs[njet][htbin] / 100.
+            except KeyError:
+                syst = 0
+            syst = 0 # FIX ME
             err = np.hypot(h.GetBinError(i), syst)
             # print syst, err
             h.SetBinError(i, err)
@@ -538,7 +542,7 @@ class Ratio_Plot():
         for h in reversed(self.component_hists):
             self.leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
         self.leg.AddEntry(self.error_hists_stat[-1], "Stat. error", "F")
-        self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error", "F")
+        self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error NULL", "F")
 
         # Get x range - but can only set it for the stack once you've drawn it (fail)
         xmin, xmax = self.autorange_xaxis(self.hist_data_signal, self.shape_stack.GetStack().Last())

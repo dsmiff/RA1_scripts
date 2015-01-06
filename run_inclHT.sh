@@ -6,7 +6,8 @@ declare -a vars=("Number_Btags" "AlphaT" "LeadJetPt" "LeadJetEta"
                  "SecondJetPt" "SecondJetEta" "HT" "MHT" "MET_Corrected"
                  "MHTovMET" "ComMinBiasDPhi_acceptedJets" "EffectiveMass"
                  "Number_Good_verticies" "JetMultiplicity")
-declare -a jets=("le3j" "ge4j")
+# declare -a jets=("le3j" "ge4j")  # for normal jet bins
+declare -a jets=("eq2j" "eq3j" "eq4j" "ge5j") # for fine jet binning
 declare -a btags=("eq0b" "eq1b")
 
 for v in "${vars[@]}"
