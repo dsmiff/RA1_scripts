@@ -193,7 +193,17 @@ if __name__ == "__main__":
         make_pres()
     elif len(sys.argv) == 7:
         make_pres(plot_dir=sys.argv[1], var=sys.argv[2], njet=sys.argv[3], btag=sys.argv[4], lo_ht=sys.argv[5], hi_ht=sys.argv[6])
+    elif len(sys.argv) == 4: # make pres for all var/njet/btag bins
+        plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
+                     "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
+                     "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass",
+                     "Number_Good_verticies", "JetMultiplicity"]
+        n_j = ["le3j", "ge4j", "ge2j"][:2]
+        n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
+        for v, nj, nb in product(plot_vars, n_j, n_b):
+            make_pres(plot_dir=sys.argv[1], var=v, njet=nj, btag=nb, lo_ht=sys.argv[2], hi_ht=sys.argv[3])
     else:
         print "Usage:"
         print "python make_component_pres.py <plot_dir> <var> <njet> <btag> <lower HT bound> <upper HT bound e.g. Inf>"
+        print "or python make_component_pres.py <plot_dir> <lower HT bound> <upper HT bound e.g. Inf> to run over existing component plots"
         exit(0)
