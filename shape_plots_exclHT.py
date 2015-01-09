@@ -43,8 +43,9 @@ ROOTdir, out_dir, HTbins = [
     ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0", allHTbins[:]],  #re-run
     ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[:]],  # include muon in Jet
     ["/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1", "./01Dec_aT_0p53_globalAlphaT_v1/", allHTbins[3:]],  # alphaT in control regions as well
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/", allHTbins[:]]  # dPhi* <0.3 in SR
-][0]
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/", allHTbins[:]],  # dPhi* <0.3 in SR
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_03Dec_aT_0p53_lowBins_dPhi_gt0p3_v0", "./03Dec_aT_0p53_lowBins_dPhi_gt0p3_v0/", allHTbins[:]]  # dPhi* >0.3 in SR
+][2]
 
 # Variable(s) you want to plot - NOT USED, just a reminder
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
@@ -53,7 +54,7 @@ plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "Number_Good_verticies", "JetMultiplicity"]
 
 # Custom bins for AlphaT per Rob's suggestion
-alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 4.5, 0.5)))
+alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 5.0, 0.5)))
 
 dphi_bins = np.arange(0.0, 4.1, 0.1) # or 10
 
@@ -75,10 +76,10 @@ def do_all_plots_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
         plot.make_plots()
         plot.save()
     # optionally can do component plots as well for this var
-    lo = HTbins[0].split("_")[0]
-    hi = HTbins[-1].split("_")[1] if "_" in HTbins[-1] else "Inf"
-    print "Make component pres"
-    pres.make_pres(plot_dir=out_dir, var=var, njet=njet, btag=btag, lo_ht=lo, hi_ht=hi)
+    # lo = HTbins[0].split("_")[0]
+    # hi = HTbins[-1].split("_")[1] if "_" in HTbins[-1] else "Inf"
+    # print "Make component pres"
+    # pres.make_pres(plot_dir=out_dir, var=var, njet=njet, btag=btag, lo_ht=lo, hi_ht=hi)
 
 
 if __name__ == "__main__":
