@@ -46,7 +46,7 @@ def jet_string_old(jet = ""):
     else:
         return "all"
 
-def jet_string(jet = ""):
+def jet_string_fine(jet = ""):
     """get the relevant jet histo string for fine jet multiplicity"""
 
     jet_cats = {
@@ -111,8 +111,8 @@ def trig_eff_old(sele = "OneMuon", ht = "", njet = ""):
 
     return d[ht+"_"+njet]
 
-def trig_eff(sele = "OneMuon", ht = "", njet = ""):
-    """ list trigger efficiencies """
+def trig_eff_fine(sele = "OneMuon", ht = "", njet = ""):
+    """ list trigger efficiencies for fine jet multiplicity """
 
     # if inclusive jet selection, use ge5j effs
     if njet == "all":
@@ -204,6 +204,12 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
     for d in get_dirs(htbins = ht_bins, sele = sele, btag = btag):
         # print f_path
         # print "%s/%s_%s" % (d, h_title, jet_string(njet))
+        if "fineJetMulti" in f_path:
+            jet_string = jet_string_fine
+            trig_eff = trig_eff_fine
+        else:
+            jet_string = jet_string_old
+            trig_eff = trig_eff_old
         h_tmp = f.Get("%s/%s_%s" % (d, h_title, jet_string(njet)))
         h = h_tmp.Clone()
         if "Data" not in f_path:

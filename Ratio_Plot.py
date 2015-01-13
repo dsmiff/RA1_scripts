@@ -44,10 +44,12 @@ class Ratio_Plot():
 
     def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log):
         self.ROOTdir = ROOTdir
+        self.fineJetMulti = "fineJetMulti" in ROOTdir
+        print "fineJetMulti", self.fineJetMulti
         self.out_stem = "Prediction"
         self.var = var
         self.njet = njet
-        self.njet_string = grabr.jet_string(njet) # old-style, eg le3j -> 2
+        self.njet_string = grabr.jet_string_fine(njet) if self.fineJetMulti else grabr.jet_string_old(njet)
         self.btag = btag
         self.btag_string = grabr.btag_string(btag) # e.g. eq0b -> btag_zero
         self.htbins = htbins  # can be single bin or many
@@ -382,7 +384,8 @@ class Ratio_Plot():
                 syst =  h.GetBinContent(i) * tf_systs[njet][htbin] / 100.
             except KeyError:
                 syst = 0
-            syst = 0 # FIX ME
+            if self.fineJetMulti:
+                syst = 0
             err = np.hypot(h.GetBinError(i), syst)
             # print syst, err
             h.SetBinError(i, err)
