@@ -158,7 +158,7 @@ def trig_eff(sele = "OneMuon", ht = "", njet = ""):
                 "975_1":1.,  "975_2":1.,   "975_3":1.,  "975_4":1.,
                 "1075_1":1., "1075_2":1.,  "1075_3":1., "1075_4":1.,}
 
-    print "> Trig corr (%s): %.3f" % (ht+"_"+njet, d[ht+"_"+njet])
+    # print "> Trig corr (%s): %.3f" % (ht+"_"+njet, d[ht+"_"+njet])
 
     return d[ht+"_"+njet]
 
@@ -202,8 +202,8 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
 
     h_total = None
     for d in get_dirs(htbins = ht_bins, sele = sele, btag = btag):
-        print f_path
-        print "%s/%s_%s" % (d, h_title, jet_string(njet))
+        # print f_path
+        # print "%s/%s_%s" % (d, h_title, jet_string(njet))
         h_tmp = f.Get("%s/%s_%s" % (d, h_title, jet_string(njet)))
         h = h_tmp.Clone()
         if "Data" not in f_path:
@@ -214,14 +214,10 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
             if "SMS" not in f_path.split("/")[-1]:
                 h.Scale( sb_corr(f_path.split("/")[-1].split("_")[1].split(".")[0]) )
             h.Scale( lumi(sele) )
-        # c1 = r.TCanvas()
-        # h.Draw()
-        # c1.SaveAs("debug.pdf")
         if not h_total:
             h_total = h.Clone()
         else:
             h_total.Add(h)
-    # r.gROOT.cd()
     h_total_clone = deepcopy(h_total)
     f.Close()
 
