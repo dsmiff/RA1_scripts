@@ -6,7 +6,7 @@ DATA control region shape, not MC. To do this, we define several control regions
 data control region plot by that factor. Oh yeah and whack in stat + syst
 uncertainties, latter from closure tests. (NB syst invalid for fine jet multiplicity)
 
-We do this for bins of Njets, Nbtag, HT. And we look at lots of variables.
+We can do this for bins of Njets, Nbtag, HT. And we look at lots of variables.
 
 And we make it look b-e-a-utiful.
 
@@ -37,12 +37,11 @@ r.gStyle.SetOptFit(1111)
 allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
           "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"][:]
 n_j = ["le3j", "ge4j", "ge2j"][:2]
-n_j_fine = ["eq2j", "eq3j", "eq4j", "ge5j"] # fine jet binning
-n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
+n_j_fine = ["eq2j", "eq3j", "eq4j", "ge5j"][:] # fine jet binning
+n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:]
 
 
 # input files, output directories, which HTbins to run over
-# if fineJetMulti need to use fine_jet branch, else master branch. Need better way.
 ROOTdir, out_dir, HTbins = [
     ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0_new", allHTbins[:]],  #re-run
     ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[3:]],  # muon in jet
@@ -55,8 +54,9 @@ ROOTdir, out_dir, HTbins = [
 # Variable(s) you want to plot
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
-             "MHTovMET", "ComMinBiasDPhi_acceptedJets", "EffectiveMass",
-             "Number_Good_verticies", "JetMultiplicity"]
+             "MHTovMET", "EffectiveMass", "Number_Good_verticies",
+             "JetMultiplicity", "ComMinBiasDPhi_acceptedJets"]
+plot_vars = ["ComMinBiasDPhi_acceptedJets", "MET", "MHT", "LeadJetEta", "Number_Good_verticies"] # for the website plots?
 
 # Custom bins for AlphaT per Rob's suggestion
 alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 5.5, 0.5)))

@@ -45,7 +45,6 @@ class Ratio_Plot():
     def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log):
         self.ROOTdir = ROOTdir
         self.fineJetMulti = "fineJetMulti" in ROOTdir
-        print "fineJetMulti", self.fineJetMulti
         self.out_stem = "Prediction"
         self.var = var
         self.njet = njet
@@ -81,8 +80,11 @@ class Ratio_Plot():
 
 
     def __del__(self):
+        """
+        destructor to test why segfaults. prob wanna delete this.
+        """
         # self.hist_data_signal.IsA().Destructor(self.hist_data_signal)
-        print "Cleaned up my shit", self.hist_data_signal
+        print "Cleaned up my stuff", self.hist_data_signal
         for h in self.component_hists:
             del h
         del self.shape_stack
@@ -93,31 +95,6 @@ class Ratio_Plot():
         del self.c
 
 
-    def check_null(self):
-        print self.hist_data_signal
-        if not self.hist_data_signal:
-            raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
-
-        print self.shape_stack
-        if not self.shape_stack:
-            raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
-
-        for i in self.component_hists:
-            print i
-            if i is None:
-                raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
-
-        for i in self.error_hists_stat:
-            print i
-            if i is None:
-                raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
-
-        for i in self.error_hists_stat_syst:
-            print i
-            if i is None:
-                raise Exception("ONE OF COMPONENT_HISTS GONE SHIT")
-
-
     def make_plots(self):
         """
         Main routine for this class to make the required hists,
@@ -125,7 +102,6 @@ class Ratio_Plot():
         """
         self.make_hists()
         # Now make plots
-        # self.check_null()
         self.make_main_plot(self.up)
         self.c.cd()
         self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1], self.error_hists_stat[-1], self.error_hists_stat_syst[-1])
@@ -407,7 +383,7 @@ class Ratio_Plot():
         """
 
         for ctrl in ctrl_regions:
-            print "**** DOING", ctrl
+            # print "**** DOING", ctrl
 
             if "Muon" in ctrl:
                 f_start = "Muon"
@@ -427,7 +403,6 @@ class Ratio_Plot():
                 processes = processes_mc_signal_ge2b
 
             if processes[ctrl]:
-
                 for ht in self.htbins:
 
                     # Data in control region:
@@ -436,31 +411,31 @@ class Ratio_Plot():
                     hist_data_control.SetName(ctrl)  # for styling later
                     hist_data_control = self.rebin_hist(hist_data_control)
                     if self.plot_components: self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
-                    print "Data in control reigon:", hist_data_control.Integral()
+                    # print "Data in control reigon:", hist_data_control.Integral()
 
                     # MC in signal region
-                    print "MC in signal region:"
+                    # print "MC in signal region:"
                     hist_mc_signal = None
                     for p in processes[ctrl]:
                         MC_signal_tmp = grabr.grab_plots(f_path="%s/Had_%s.root" % (self.ROOTdir, p),
                                                          sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                        print p, MC_signal_tmp.Integral()
+                        # print p, MC_signal_tmp.Integral()
                         if not hist_mc_signal:
                             hist_mc_signal = self.rebin_hist(MC_signal_tmp)
                         else:
                             hist_mc_signal.Add(self.rebin_hist(MC_signal_tmp))
                             # hist_mc_signal.Add(MC_signal_tmp)
 
-                    print "Total MC signal region:", hist_mc_signal.Integral()
+                    # print "Total MC signal region:", hist_mc_signal.Integral()
                     if self.plot_components: self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
                     # MC in control region
-                    print "MC in control region:"
+                    # print "MC in control region:"
                     hist_mc_control = None
                     for p in processes_mc_ctrl:
                         MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, f_start, p),
                                                        sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                        print p, MC_ctrl_tmp.Integral()
+                        # print p, MC_ctrl_tmp.Integral()
                         if not hist_mc_control:
                             hist_mc_control = self.rebin_hist(MC_ctrl_tmp)
                             # hist_mc_control = MC_ctrl_tmp
@@ -468,7 +443,7 @@ class Ratio_Plot():
                             hist_mc_control.Add(self.rebin_hist(MC_ctrl_tmp))
                             # hist_mc_control.Add(MC_ctrl_tmp)
 
-                    print "Total MC control region:", hist_mc_control.Integral()
+                    # print "Total MC control region:", hist_mc_control.Integral()
                     if self.plot_components: self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
                     hist_mc_signal.Divide(hist_mc_control)
@@ -489,7 +464,7 @@ class Ratio_Plot():
                         hist_stat_total.Add(hist_data_control.Clone())
                         hist_syst_total.Add(h_syst)
 
-                    print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
+                    # print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
 
                 # hist_total = self.rebin_hist(hist_total)
                 self.component_hists.append(hist_total)
@@ -557,7 +532,10 @@ class Ratio_Plot():
         for h in reversed(self.component_hists):
             self.leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
         self.leg.AddEntry(self.error_hists_stat[-1], "Stat. error", "F")
-        self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error NULL", "F")
+        if self.fineJetMulti:
+            self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error NULL", "F")
+        else:
+            self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error", "F")
 
         # Get x range - but can only set it for the stack once you've drawn it (fail)
         xmin, xmax = self.autorange_xaxis(self.hist_data_signal, self.shape_stack.GetStack().Last())

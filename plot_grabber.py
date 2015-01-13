@@ -202,14 +202,14 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
 
     h_total = None
     for d in get_dirs(htbins = ht_bins, sele = sele, btag = btag):
-        # print f_path
-        # print "%s/%s_%s" % (d, h_title, jet_string(njet))
         if "fineJetMulti" in f_path:
             jet_string = jet_string_fine
             trig_eff = trig_eff_fine
         else:
             jet_string = jet_string_old
             trig_eff = trig_eff_old
+        # print f_path
+        # print "%s/%s_%s" % (d, h_title, jet_string(njet))
         h_tmp = f.Get("%s/%s_%s" % (d, h_title, jet_string(njet)))
         h = h_tmp.Clone()
         if "Data" not in f_path:
