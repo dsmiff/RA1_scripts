@@ -48,7 +48,7 @@ ROOTdir, out_dir, HTbins = [
     ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0/", allHTbins[:]],  # dPhi* <0.3 in SR - old
     ["/Users/robina/Dropbox/AlphaT/Root_Files_21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_gt0p3_v0", "./21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_gt0p3_v0_new/", allHTbins[:]],  # dPhi* >0.3 in SR, fine jet multiplicity, fixed cross-cleaner
     ["/Users/robina/Dropbox/AlphaT/Root_Files_21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_lt0p3_v0", "./21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_lt0p3_v0_new/", allHTbins[:]]  # dPhi* <0.3 in SR, fine jet multiplicity, fixed cross-cleaner
-][-1]
+][-2]
 
 # Variable(s) you want to plot
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
@@ -88,14 +88,14 @@ def do_a_plot_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
         plot.make_plots()
         plot.save()
     # optionally can do component plots as well for this var
-    lo = HTbins[0].split("_")[0]
-    hi = HTbins[-1].split("_")[1] if "_" in HTbins[-1] else "Inf"
-    print "Make component pres"
-    pres.make_pres(plot_dir=out_dir, var=var, njet=njet, btag=btag, lo_ht=lo, hi_ht=hi)
+    # lo = HTbins[0].split("_")[0]
+    # hi = HTbins[-1].split("_")[1] if "_" in HTbins[-1] else "Inf"
+    # print "Make component pres"
+    # pres.make_pres(plot_dir=out_dir, var=var, njet=njet, btag=btag, lo_ht=lo, hi_ht=hi)
 
 
 if __name__ == "__main__":
-    print "Making lots of data VS bg plots for inclusive HT..."
+    print "Making lots of data VS bg plots..."
     if len(sys.argv) == 5:
         if sys.argv[-1] != "Inc" and sys.argv[-1] != "Exc":
             print "Must be Inc or Exc"
