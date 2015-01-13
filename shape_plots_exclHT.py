@@ -35,7 +35,8 @@ r.gStyle.SetOptFit(1111)
 allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
           "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"]
 # n_j = ["le3j", "ge4j", "ge2j"][:2]
-# n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:2]
+n_j = ["eq2j", "eq3j", "eq4j", "ge5j"] # fine jet binning
+n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:3]
 
 
 # input files, output directories, HTbins
@@ -63,10 +64,10 @@ rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
             "MET_Corrected": 8, "HT": 10, "LeadJetPt": 5, "SecondJetPt": 5,
             "EffectiveMass": 10, "MHT": 4}
 
-log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"] #, "HT"]:
+log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
 
 
-def do_all_plots_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
+def do_a_plot_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
     # exclusive HT bins - do one by one
     for ht in HTbins:
         rebin = rebin_d[var] if var in rebin_d else 2
@@ -82,13 +83,19 @@ def do_all_plots_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
     # pres.make_pres(plot_dir=out_dir, var=var, njet=njet, btag=btag, lo_ht=lo, hi_ht=hi)
 
 
+def do_all_plots_HT_excl():
+    for v, j, b in product(plot_vars, n_j, n_b):
+        do_a_plot_HT_excl(var=v, njet=j, btag=b)
+
+
 if __name__ == "__main__":
     print "Making lots of data VS bg plots for exclusive HT bins..."
     if len(sys.argv) == 4:
-        do_all_plots_HT_excl(var=sys.argv[1], njet=sys.argv[2], btag=sys.argv[3])
+        do_a_plot_HT_excl(var=sys.argv[1], njet=sys.argv[2], btag=sys.argv[3])
     elif len(sys.argv) == 1:
         do_all_plots_HT_excl()
     else:
         print "Run using:"
-        print "python shape_plots_exclHT.py <variable> <njet> <btag>"
+        print "python shape_plots_exclHT.py # for all variables/njet/btag bins"
+        print "python shape_plots_exclHT.py <variable> <njet> <btag>  # for one specific case"
         exit(1)

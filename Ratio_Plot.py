@@ -44,17 +44,19 @@ class Ratio_Plot():
 
     def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log):
         self.ROOTdir = ROOTdir
-        self.out_stem = "plot"
+        self.out_stem = "Prediction"
         self.var = var
         self.njet = njet
+        self.njet_string = grabr.jet_string(njet) # old-style, eg le3j -> 2
         self.btag = btag
+        self.btag_string = grabr.btag_string(btag) # e.g. eq0b -> btag_zero
         self.htbins = htbins  # can be single bin or many
         self.htstring = self.make_ht_string(htbins)
         self.rebin = rebin
         self.log = log
         self.autorange_x = True  # to auto set x range for non-empty range
         self.autorange_y = True  # to auto set y range for sensible range
-        self.c = r.TCanvas("c")
+        self.c = r.TCanvas("c", "", 1200, 1000)
         self.up = r.TPad("u", "", 0.01, 0.25, 0.99, 0.99)
         self.dp = r.TPad("d", "", 0.01, 0.01, 0.99, 0.25)
         self.dp.SetBottomMargin(1.3 * self.dp.GetBottomMargin())
@@ -121,7 +123,7 @@ class Ratio_Plot():
         """
         self.make_hists()
         # Now make plots
-        self.check_null()
+        # self.check_null()
         self.make_main_plot(self.up)
         self.c.cd()
         self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1], self.error_hists_stat[-1], self.error_hists_stat_syst[-1])
@@ -138,7 +140,7 @@ class Ratio_Plot():
             if (htbins[-1] != "1075"):
                 htstring += htbins[-1].split("_")[-1]
             else:
-                htstring += "Inf"
+                htstring += "upwards"
         else:
             htstring = htbins
         return htstring
@@ -150,7 +152,10 @@ class Ratio_Plot():
         """
         self.c.cd()
         if not name:
-            self.c.SaveAs("%s/%s_%s_%s_%s_%s.pdf" % (self.outdir, self.out_stem, self.var, self.njet, self.btag, self.htstring))
+            fname = "%s/%s_%s_%s_%s_%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag, self.htstring)
+            self.c.SaveAs("%s.pdf" % fname)
+            self.c.SaveAs("%s.png" % fname)
+            self.c.SaveAs("%s.C" % fname)
         else:
             self.c.SaveAs("%s/%s" %(odir, name))
 
@@ -373,7 +378,11 @@ class Ratio_Plot():
         Turns stat errors into stat+syst errors using LUT at top
         """
         for i in range(1, h.GetNbinsX() + 1):
-            syst =  h.GetBinContent(i) * tf_systs[njet][htbin] / 100.
+            try:
+                syst =  h.GetBinContent(i) * tf_systs[njet][htbin] / 100.
+            except KeyError:
+                syst = 0
+            syst = 0 # FIX ME
             err = np.hypot(h.GetBinError(i), syst)
             # print syst, err
             h.SetBinError(i, err)
@@ -538,7 +547,7 @@ class Ratio_Plot():
         for h in reversed(self.component_hists):
             self.leg.AddEntry(h, ctrl_regions[h.GetName()], "f")
         self.leg.AddEntry(self.error_hists_stat[-1], "Stat. error", "F")
-        self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error", "F")
+        self.leg.AddEntry(self.error_hists_stat_syst[-1], "Stat. + syst. error NULL", "F")
 
         # Get x range - but can only set it for the stack once you've drawn it (fail)
         xmin, xmax = self.autorange_xaxis(self.hist_data_signal, self.shape_stack.GetStack().Last())
