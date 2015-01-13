@@ -142,7 +142,10 @@ class Ratio_Plot():
             if (htbins[-1] != "1075"):
                 htstring += htbins[-1].split("_")[-1]
             else:
-                htstring += "upwards"
+                # If doing inclusive, then want "_upwards"
+                # If just the 1075 - Inf bin, no "upwards"
+                if len(htbins) > 1:
+                    htstring += "upwards"
         else:
             htstring = htbins
         return htstring
@@ -154,7 +157,7 @@ class Ratio_Plot():
         """
         self.c.cd()
         if not name:
-            fname = "%s/%s_%s_%s_%s_%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag, self.htstring)
+            fname = "%s/%s_%s_%s_%s_%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag_string, self.htstring)
             self.c.SaveAs("%s.pdf" % fname)
             self.c.SaveAs("%s.png" % fname)
             self.c.SaveAs("%s.C" % fname)
@@ -416,92 +419,96 @@ class Ratio_Plot():
             hist_stat_total = None
             hist_syst_total = None
 
-            for ht in self.htbins:
-
-                # Data in control region:
-                hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (self.ROOTdir, f_start),
-                                                     sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                hist_data_control.SetName(ctrl)  # for styling later
-                hist_data_control = self.rebin_hist(hist_data_control)
-                if self.plot_components: self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
-                print "Data in control reigon:", hist_data_control.Integral()
-
-                # MC in signal region
-                if "0" in self.btag or "1" in self.btag:
-                    processes = processes_mc_signal_le1b
-                else:
-                    processes = processes_mc_signal_ge2b
-
-                print "MC in signal region:"
-                hist_mc_signal = None
-                for p in processes[ctrl]:
-                    MC_signal_tmp = grabr.grab_plots(f_path="%s/Had_%s.root" % (self.ROOTdir, p),
-                                                     sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                    print p, MC_signal_tmp.Integral()
-                    if not hist_mc_signal:
-                        hist_mc_signal = self.rebin_hist(MC_signal_tmp)
-                    else:
-                        hist_mc_signal.Add(self.rebin_hist(MC_signal_tmp))
-                        # hist_mc_signal.Add(MC_signal_tmp)
-
-                if self.plot_components: self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
-                print "Total MC signal region:", hist_mc_signal.Integral()
-
-                # MC in control region
-                print "MC in control region:"
-                hist_mc_control = None
-                for p in processes_mc_ctrl:
-                    MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, f_start, p),
-                                                   sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                    print p, MC_ctrl_tmp.Integral()
-                    if not hist_mc_control:
-                        hist_mc_control = self.rebin_hist(MC_ctrl_tmp)
-                        # hist_mc_control = MC_ctrl_tmp
-                    else:
-                        hist_mc_control.Add(self.rebin_hist(MC_ctrl_tmp))
-                        # hist_mc_control.Add(MC_ctrl_tmp)
-
-                print "Total MC control region:", hist_mc_control.Integral()
-                if self.plot_components: self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
-
-                hist_mc_signal.Divide(hist_mc_control)
-                if self.plot_components: self.plot_component(hist_mc_signal, "mc_ratio_%s_%s" % (ctrl, self.make_ht_string(ht)))
-                hist_data_control.Multiply(hist_mc_signal)
-                if self.plot_components: self.plot_component(hist_data_control, "scaled_data_%s_%s" % (ctrl, self.make_ht_string(ht)))
-                # hist_data_control = self.rebin_hist(hist_data_control) # This segfaults soometimes
-
-                # Calculate syst error on TF for this bin
-                h_syst = hist_data_control.Clone()
-                self.set_syst_errors(h_syst, ht, self.njet)
-                if not hist_total:
-                    hist_total = hist_data_control
-                    hist_stat_total = hist_data_control.Clone()
-                    hist_syst_total = h_syst
-                else:
-                    hist_total.Add(hist_data_control)
-                    hist_stat_total.Add(hist_data_control.Clone())
-                    hist_syst_total.Add(h_syst)
-
-                print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
-
-            # hist_total = self.rebin_hist(hist_total)
-            self.component_hists.append(hist_total)
-
-            # Do stat+syst err hists for this control region & store (NB cumulative)
-            # hist_stat_total = self.rebin_hist(hist_stat_total)
-            # hist_syst_total = self.rebin_hist(hist_syst_total)
-
-            self.style_hist_err1(hist_stat_total)
-            self.style_hist_err2(hist_syst_total)
-
-            if not self.error_hists_stat:
-                self.error_hists_stat = [hist_stat_total]
-                self.error_hists_stat_syst = [hist_syst_total]
+            # Processes for MC in signal region
+            # Check that there are actually processes to run over for this ctrl region...
+            if "0" in self.btag or "1" in self.btag:
+                processes = processes_mc_signal_le1b
             else:
-                hist_stat_total.Add(self.error_hists_stat[-1])
-                self.error_hists_stat.append(hist_stat_total)
-                hist_syst_total.Add(self.error_hists_stat_syst[-1])
-                self.error_hists_stat_syst.append(hist_syst_total)
+                processes = processes_mc_signal_ge2b
+
+            if processes[ctrl]:
+
+                for ht in self.htbins:
+
+                    # Data in control region:
+                    hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (self.ROOTdir, f_start),
+                                                         sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+                    hist_data_control.SetName(ctrl)  # for styling later
+                    hist_data_control = self.rebin_hist(hist_data_control)
+                    if self.plot_components: self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                    print "Data in control reigon:", hist_data_control.Integral()
+
+                    # MC in signal region
+                    print "MC in signal region:"
+                    hist_mc_signal = None
+                    for p in processes[ctrl]:
+                        MC_signal_tmp = grabr.grab_plots(f_path="%s/Had_%s.root" % (self.ROOTdir, p),
+                                                         sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+                        print p, MC_signal_tmp.Integral()
+                        if not hist_mc_signal:
+                            hist_mc_signal = self.rebin_hist(MC_signal_tmp)
+                        else:
+                            hist_mc_signal.Add(self.rebin_hist(MC_signal_tmp))
+                            # hist_mc_signal.Add(MC_signal_tmp)
+
+                    print "Total MC signal region:", hist_mc_signal.Integral()
+                    if self.plot_components: self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
+
+                    # MC in control region
+                    print "MC in control region:"
+                    hist_mc_control = None
+                    for p in processes_mc_ctrl:
+                        MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, f_start, p),
+                                                       sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+                        print p, MC_ctrl_tmp.Integral()
+                        if not hist_mc_control:
+                            hist_mc_control = self.rebin_hist(MC_ctrl_tmp)
+                            # hist_mc_control = MC_ctrl_tmp
+                        else:
+                            hist_mc_control.Add(self.rebin_hist(MC_ctrl_tmp))
+                            # hist_mc_control.Add(MC_ctrl_tmp)
+
+                    print "Total MC control region:", hist_mc_control.Integral()
+                    if self.plot_components: self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
+
+                    hist_mc_signal.Divide(hist_mc_control)
+                    if self.plot_components: self.plot_component(hist_mc_signal, "mc_ratio_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                    hist_data_control.Multiply(hist_mc_signal)
+                    if self.plot_components: self.plot_component(hist_data_control, "scaled_data_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                    # hist_data_control = self.rebin_hist(hist_data_control) # This segfaults soometimes
+
+                    # Calculate syst error on TF for this bin
+                    h_syst = hist_data_control.Clone()
+                    self.set_syst_errors(h_syst, ht, self.njet)
+                    if not hist_total:
+                        hist_total = hist_data_control
+                        hist_stat_total = hist_data_control.Clone()
+                        hist_syst_total = h_syst
+                    else:
+                        hist_total.Add(hist_data_control)
+                        hist_stat_total.Add(hist_data_control.Clone())
+                        hist_syst_total.Add(h_syst)
+
+                    print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
+
+                # hist_total = self.rebin_hist(hist_total)
+                self.component_hists.append(hist_total)
+
+                # Do stat+syst err hists for this control region & store (NB cumulative)
+                # hist_stat_total = self.rebin_hist(hist_stat_total)
+                # hist_syst_total = self.rebin_hist(hist_syst_total)
+
+                self.style_hist_err1(hist_stat_total)
+                self.style_hist_err2(hist_syst_total)
+
+                if not self.error_hists_stat:
+                    self.error_hists_stat = [hist_stat_total]
+                    self.error_hists_stat_syst = [hist_syst_total]
+                else:
+                    hist_stat_total.Add(self.error_hists_stat[-1])
+                    self.error_hists_stat.append(hist_stat_total)
+                    hist_syst_total.Add(self.error_hists_stat_syst[-1])
+                    self.error_hists_stat_syst.append(hist_syst_total)
 
 
         # Get data hist
