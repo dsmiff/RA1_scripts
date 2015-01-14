@@ -72,24 +72,32 @@ rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
 log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
 
 
-def do_a_plot_HT_incl(var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b"):
+def do_a_plot_HT_incl(var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b", check=False):
     # Inclusive HT
     rebin = rebin_d[var] if var in rebin_d else 2
     log = True if var in log_these else False
     plot = Ratio_Plot(ROOTdir, out_dir, var, njet, btag, HTbins, rebin, log)
-    plot.make_plots()
-    plot.save()
+    if check:
+        if not os.path.isfile(plot.outname+".png"):
+            print "python shape_plots.py -v %s -j %s -b %s" % (var, njet, btag)
+    else:
+        plot.make_plots()
+        plot.save()
 
 
-def do_a_plot_HT_excl(var="AlphaT", njet="le3j", btag="eq0b"):
+def do_a_plot_HT_excl(var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, check=False):
     # exclusive HT bins - do one by one
-    for ht in HTbins:
+    for ht in htbins:
         rebin = rebin_d[var] if var in rebin_d else 2
         log = True if var in log_these else False
         plot = Ratio_Plot(ROOTdir, out_dir, var, njet, btag, [ht], rebin, log)
-        plot.plot_components = True
-        plot.make_plots()
-        plot.save()
+        if check:
+            if not os.path.isfile(plot.outname+".png"):
+                print "python shape_plots.py -v %s -j %s -b %s --ht %s" % (var, njet, btag, ht)
+        else:
+            plot.plot_components = True
+            plot.make_plots()
+            plot.save()
     # optionally can do component plots as well for this var
     # lo = HTbins[0].split("_")[0]
     # hi = HTbins[-1].split("_")[1] if "_" in HTbins[-1] else "Inf"
@@ -105,13 +113,13 @@ if __name__ == "__main__":
     for INCLUSIVE HT. There are flags if you want to vary any of these.
     """
 
-    print "Making lots of data VS bg plots..."
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("--do_exclusive_HT", help="if you want plots done in HT bins rather than for inclusive HT", action='store_true', default=False)
-    parser.add_argument("-v", "--var", help=("variable to plot (if undefined, runs over all)"), nargs="+")
-    parser.add_argument("-j", "--njet", help=("number of jets (if undefined, runs over all)"), nargs="+")
-    parser.add_argument("-b", "--btag", help=("number of btags (if undefined, runs over all)"), nargs="+")
+    parser.add_argument("--do_exclusive_HT", help="if you want plots done in for all HT bins indivudally rather than for inclusive HT", action='store_true', default=False)
+    parser.add_argument("-v", "--var", help="variable to plot (if undefined, runs over all)", nargs="+")
+    parser.add_argument("-j", "--njet", help="number of jets (if undefined, runs over all)", nargs="+")
+    parser.add_argument("-b", "--btag", help="number of btags (if undefined, runs over all)", nargs="+")
+    parser.add_argument("--ht", help="specify HT bin(s). This overrides --do_exclusive_HT", nargs="+")
+    parser.add_argument("-c", "--check", help ="don't make plots, just check they exist. prints list of those that don't so you can run them again.", action='store_true', default=False)
     args = parser.parse_args()
 
     # Figure out which vars/njet/btags options to run over
@@ -120,17 +128,43 @@ if __name__ == "__main__":
     run_vars = plot_vars[:]
     run_njet = n_j_fine[:] if "fineJetMulti" in ROOTdir else n_j[:]
     run_btag = n_b[:]
+    run_ht = HTbins[:]
     if args.var:
         run_vars = list(set(plot_vars) & set(args.var))
     if args.njet:
         run_njet = list(set(run_njet) & set(args.njet))
     if args.btag:
         run_btag = list(set(n_b) & set(args.btag))
+    if args.ht:
+        run_ht = list(set(HTbins) & set(args.ht))
 
-    print run_vars, run_njet, run_btag
 
+    # user feedback
+    if args.do_exclusive_HT:
+        print "Doing exclusive HT bins"
+    else:
+        print "Doing inclusive HT"
+    print "vars:", run_vars
+    print "njet:", run_njet
+    print "btag:", run_btag
+    print "ht:", run_ht
+
+    # check that none are empty
+    if not run_vars or not run_njet or not run_btag or not run_ht:
+        raise RuntimeError("One of var/njet/btag/ht lists is empty - check your spelling!")
+
+    if args.check:
+        print "Not making plots, checking they exist..."
+        print "Please re-run using the following commands:"
+        print "(If there's no commands, you're good to go!)"
+    else:
+        print "Making lots of data VS bg plots..."
+
+    # actually do something
     for v, j, b in product(run_vars, run_njet, run_btag):
-        if args.do_exclusive_HT:
-            do_a_plot_HT_excl(var=v, njet=j, btag=b)
+        if args.ht:
+            do_a_plot_HT_excl(var=v, njet=j, btag=b, htbins=run_ht, check=args.check)
+        elif args.do_exclusive_HT:
+            do_a_plot_HT_excl(var=v, njet=j, btag=b, htbins=HTbins, check=args.check)
         else:
-            do_a_plot_HT_incl(var=v, njet=j, btag=b)
+            do_a_plot_HT_incl(var=v, njet=j, btag=b, check=args.check)
