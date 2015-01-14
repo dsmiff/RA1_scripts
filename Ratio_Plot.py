@@ -57,14 +57,16 @@ class Ratio_Plot():
         self.log = log
         self.autorange_x = True  # to auto set x range for non-empty range
         self.autorange_y = True  # to auto set y range for sensible range
-        self.c = r.TCanvas("c", "", 1200, 1000)
-        self.up = r.TPad("u", "", 0.01, 0.25, 0.99, 0.99)
-        self.dp = r.TPad("d", "", 0.01, 0.01, 0.99, 0.25)
+        unique = self.njet_string+self.btag_string+self.htstring+self.var  # need unique names to stop segfault
+        self.c = r.TCanvas("c"+unique, "", 1200, 1000)
+        self.c.cd()  # this seems important to avoid segfaults
+        self.up = r.TPad("u"+unique, "", 0.01, 0.25, 0.99, 0.99)
+        self.dp = r.TPad("d"+unique, "", 0.01, 0.01, 0.99, 0.25)
         self.dp.SetBottomMargin(1.3 * self.dp.GetBottomMargin())
         self.hist_data_signal = None
         self.component_hists = []
         self.transfer_factors = {}
-        self.shape_stack = r.THStack("shape_stack", "")
+        self.shape_stack = r.THStack("shape_stack"+unique, "")
         self.errors_all_hists = False  # set true if you want errors on all component hists as well
         self.error_hists_stat = None
         self.error_hists_stat_syst = None
@@ -77,22 +79,22 @@ class Ratio_Plot():
         self.plot_components = False  # plots ALL components, for debugging
         self.outdir = "%s/%s_%s_%s" % (out_dir, njet, btag, self.htstring)  # dir for putting all plots
         check_dir_exists(self.outdir)
+        self.outname = "%s/%s_%s_%s_%s%s%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag_string, "_" if self.btag_string else "", self.htstring) # output file dir+name (without extension)
 
-
-    def __del__(self):
-        """
-        destructor to test why segfaults. prob wanna delete this.
-        """
-        # self.hist_data_signal.IsA().Destructor(self.hist_data_signal)
-        print "Cleaned up my stuff", self.hist_data_signal
-        for h in self.component_hists:
-            del h
-        del self.shape_stack
-        del self.error_hists_stat
-        del self.error_hists_stat_syst
-        del self.up
-        del self.dp
-        del self.c
+    # def __del__(self):
+    #     """
+    #     destructor to test why segfaults. prob wanna delete this.
+    #     """
+    #     # self.hist_data_signal.IsA().Destructor(self.hist_data_signal)
+    #     print "Cleaned up my stuff", self.hist_data_signal
+    #     for h in self.component_hists:
+    #         del h
+    #     del self.shape_stack
+    #     del self.error_hists_stat
+    #     del self.error_hists_stat_syst
+    #     del self.up
+    #     del self.dp
+    #     del self.c
 
 
     def make_plots(self):
@@ -133,10 +135,9 @@ class Ratio_Plot():
         """
         self.c.cd()
         if not name:
-            fname = "%s/%s_%s_%s_%s%s%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag_string, "_" if self.btag_string else "", self.htstring)
-            self.c.SaveAs("%s.pdf" % fname)
-            self.c.SaveAs("%s.png" % fname)
-            self.c.SaveAs("%s.C" % fname)
+            self.c.SaveAs("%s.pdf" % self.outname)
+            self.c.SaveAs("%s.png" % self.outname)
+            self.c.SaveAs("%s.C" % self.outname)
         else:
             self.c.SaveAs("%s/%s" %(odir, name))
 
