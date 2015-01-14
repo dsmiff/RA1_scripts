@@ -31,7 +31,10 @@ def btag_string(btag = ""):
             "eq2b": "btag_two",
             "eq3b": "btag_three",
             "ge0b": "",
-            "ge1b": "btag_morethanzero"
+            "ge1b": "btag_morethanzero",
+            "ge2b": "btag_morethanone",
+            "ge3b": "btag_morethantwo",
+            "ge4b": "btag_morethanthree"
         }
 
     return d[btag]
@@ -208,8 +211,8 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
         else:
             jet_string = jet_string_old
             trig_eff = trig_eff_old
-        # print f_path
-        # print "%s/%s_%s" % (d, h_title, jet_string(njet))
+        print f_path
+        print "%s/%s_%s" % (d, h_title, jet_string(njet))
         h_tmp = f.Get("%s/%s_%s" % (d, h_title, jet_string(njet)))
         h = h_tmp.Clone()
         if "Data" not in f_path:
