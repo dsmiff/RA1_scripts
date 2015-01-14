@@ -114,14 +114,14 @@ class Ratio_Plot():
         """
         # test if list or string
         if hasattr(htbins, "__iter__"):
-            htstring = htbins[0].split("_")[0] + "_"
+            htstring = htbins[0].split("_")[0]
             if (htbins[-1] != "1075"):
-                htstring += htbins[-1].split("_")[-1]
+                htstring += "_"+htbins[-1].split("_")[-1]
             else:
                 # If doing inclusive, then want "_upwards"
                 # If just the 1075 - Inf bin, no "upwards"
                 if len(htbins) > 1:
-                    htstring += "upwards"
+                    htstring += "_upwards"
         else:
             htstring = htbins
         return htstring
@@ -133,7 +133,7 @@ class Ratio_Plot():
         """
         self.c.cd()
         if not name:
-            fname = "%s/%s_%s_%s_%s_%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag_string, self.htstring)
+            fname = "%s/%s_%s_%s_%s%s%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag_string, "_" if self.btag_string else "", self.htstring)
             self.c.SaveAs("%s.pdf" % fname)
             self.c.SaveAs("%s.png" % fname)
             self.c.SaveAs("%s.C" % fname)
