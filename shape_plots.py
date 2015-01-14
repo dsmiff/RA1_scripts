@@ -36,27 +36,28 @@ r.gStyle.SetOptFit(1111)
 # Define region bins
 allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
           "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"][:]
-n_j = ["le3j", "ge4j", "ge2j"][:2]
+n_j = ["le3j", "ge4j", "ge2j"][:]
 n_j_fine = ["eq2j", "eq3j", "eq4j", "ge5j"][:] # fine jet binning
-n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b"][:]
+# n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b", "ge2b", "ge3b", "ge4b"][:]
+n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b", "ge2b", "ge4b"][:]
 
 
 # input files, output directories, which HTbins to run over
 ROOTdir, out_dir, HTbins = [
     ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0_new", allHTbins[:]],  #re-run
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[3:]],  # muon in jet
     ["/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1", "./01Dec_aT_0p53_globalAlphaT_v1_new/", allHTbins[3:]],  # alphaT in control regions as well
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0_new/", allHTbins[:]],  # dPhi* <0.3 in SR - old
     ["/Users/robina/Dropbox/AlphaT/Root_Files_21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_gt0p3_v0", "./21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_gt0p3_v0_new/", allHTbins[:]],  # dPhi* >0.3 in SR, fine jet multiplicity, fixed cross-cleaner
     ["/Users/robina/Dropbox/AlphaT/Root_Files_21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_lt0p3_v0", "./21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_lt0p3_v0_new/", allHTbins[:]]  # dPhi* <0.3 in SR, fine jet multiplicity, fixed cross-cleaner
-][0]
+    # ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[3:]],  # muon in jet
+    # ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0_new/", allHTbins[:]],  # dPhi* <0.3 in SR - old
+][-1]
 
 # Variable(s) you want to plot
 plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
              "MHTovMET", "EffectiveMass", "Number_Good_verticies",
              "JetMultiplicity", "ComMinBiasDPhi_acceptedJets"]
-plot_vars = ["ComMinBiasDPhi_acceptedJets", "MET", "MHT", "LeadJetEta", "Number_Good_verticies"] # for the website plots?
+plot_vars = ["ComMinBiasDPhi_acceptedJets", "MET_Corrected", "MHT", "LeadJetEta", "Number_Good_verticies"][:] # for the website plots?
 
 # Custom bins for AlphaT per Rob's suggestion
 alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 5.5, 0.5)))
