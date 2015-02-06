@@ -22,7 +22,7 @@ import math
 import numpy as np
 import os
 import array
-from Ratio_Plot import Ratio_Plot
+from Prediction_Plot import Prediction_Plot
 import sys
 import make_component_pres as pres
 
@@ -77,7 +77,7 @@ def do_a_plot_HT_incl(var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b
     # Inclusive HT
     rebin = rebin_d[var] if var in rebin_d else 2
     log = True if var in log_these else False
-    plot = Ratio_Plot(ROOTdir, out_dir, var, njet, btag, HTbins, rebin, log)
+    plot = Prediction_Plot(ROOTdir, out_dir, var, njet, btag, HTbins, rebin, log)
     if check:
         if not os.path.isfile(plot.outname+".png"):
             print "python shape_plots.py -v %s -j %s -b %s" % (var, njet, btag)
@@ -91,7 +91,7 @@ def do_a_plot_HT_excl(var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, che
     for ht in htbins:
         rebin = rebin_d[var] if var in rebin_d else 2
         log = True if var in log_these else False
-        plot = Ratio_Plot(ROOTdir, out_dir, var, njet, btag, [ht], rebin, log)
+        plot = Prediction_Plot(ROOTdir, out_dir, var, njet, btag, [ht], rebin, log)
         if check:
             if not os.path.isfile(plot.outname+".png"):
                 print "python shape_plots.py -v %s -j %s -b %s --ht %s" % (var, njet, btag, ht)

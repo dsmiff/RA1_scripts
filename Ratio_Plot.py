@@ -36,7 +36,7 @@ def check_dir_exists(d):
     if not os.path.isdir(opath):
         os.makedirs(opath)
 
-class Ratio_Plot():
+class Prediction_Plot():
     """
     Class to make plot from data, BG shapes from data, and a neat ratio plot below that.
     Well, it would be neat if it didn't crash sometimes.
