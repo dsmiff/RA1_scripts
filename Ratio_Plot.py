@@ -58,6 +58,7 @@ class Ratio_Plot():
         self.autorange_x = True  # to auto set x range for non-empty range
         self.autorange_y = True  # to auto set y range for sensible range
         unique = self.njet_string+self.btag_string+self.htstring+self.var  # need unique names to stop segfault
+        unique = "" # but not when actually running...
         self.c = r.TCanvas("c"+unique, "", 1200, 1000)
         self.c.cd()  # this seems important to avoid segfaults
         self.up = r.TPad("u"+unique, "", 0.01, 0.25, 0.99, 0.99)
