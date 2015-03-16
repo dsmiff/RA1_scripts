@@ -334,7 +334,7 @@ class PredictionPlot():
         xmin = low_1 if low_1 < low_2 else low_2
         xmax = high_1 if high_1 > high_2 else high_2
         # xmin -= (2*h_1.GetBinWidth(1))  # add little bit of padding to LHS
-        xmax += 0.5 * (xmax-xmin)  # add some space to RHS
+        xmax += 0.4 * (xmax-xmin)  # add some space to RHS
         print xmin, xmax
         return xmin, xmax
 
