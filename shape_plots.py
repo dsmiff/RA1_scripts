@@ -33,34 +33,74 @@ r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 # r.TH1.AddDirectory(r.kFALSE)
 
-# Define region bins
+###############################################
+# Define region bins - inclusive and exclusive
+###############################################
 allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
-          "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"][:]
+          "575_675", "675_775", "775_875", "875_975", "975_1075", "1075", "200_upwards", "375_upwards"][:]
+
 n_j = ["le3j", "ge4j", "ge2j"][:]
 n_j_fine = ["eq2j", "eq3j", "eq4j", "ge5j"][:] # fine jet binning
 # n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b", "ge2b", "ge3b", "ge4b"][:]
 # n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b", "ge2b", "ge4b"][:]
-n_b = ["eq0b", "eq1b", "eq2b", "ge1b", "ge2b"][:]
+n_b = ["eq0b", "eq1b", "eq2b", "ge1b", "ge2b", "ge0b"][:]
 
 
-# input files, output directories, which HTbins to run over
-ROOTdir, out_dir, HTbins = [
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/", "11Dec_aT_0p53_forRobin_v0_new", allHTbins[:]],  #re-run
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1", "./01Dec_aT_0p53_globalAlphaT_v1_new/", allHTbins[3:]],  # alphaT in control regions as well
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_gt0p3_v0", "./21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_gt0p3_v0_new/", allHTbins[:]],  # dPhi* >0.3 in SR, fine jet multiplicity, fixed cross-cleaner
-    ["/Users/robina/Dropbox/AlphaT/Root_Files_21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_lt0p3_v0", "./21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_lt0p3_v0_new/", allHTbins[:]]  # dPhi* <0.3 in SR, fine jet multiplicity, fixed cross-cleaner
-    # ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/", "11Dec_aT_0p53_forRobin_v0_MuonInJet", allHTbins[3:]],  # muon in jet
-    # ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0", "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0_new/", allHTbins[:]],  # dPhi* <0.3 in SR - old
-][1]
+###############################################
+# input files, output directories, which HTbins to run over, and custom title on plot (in addition to binning info)
+###############################################
+ROOTdir, out_dir, HTbins, title = [
+    # ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/",
+    #     "11Dec_aT_0p53_forRobin_v0_new",
+    #     allHTbins[:],
+    #     "#alpha_{T} > 0.53 in signal region"],  #re-run
 
+    # ["/Users/robina/Dropbox/AlphaT/Root_Files_01Dec_aT_0p53_globalAlphaT_v1",
+    #     "./01Dec_aT_0p53_globalAlphaT_v1_new/",
+    #     allHTbins[3:],
+    #     "#alpha_{T} > 0.53 in all regions"],  # alphaT in control regions as well
+
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_gt0p3_v0",
+        "./21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_gt0p3_v0_new/",
+        allHTbins[:],
+        "#alpha_{T} > 0.53 in signal region, #Delta #phi > 0.3"],  # dPhi* >0.3 in SR, fine jet multiplicity, fixed cross-cleaner
+
+    ["/Users/robina/Dropbox/AlphaT/Root_Files_21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_lt0p3_v0",
+        "./21Dec_alphaT_0p53_fullHT_fixedCC_fineJetMulti_dPhi_lt0p3_v0_new/",
+        allHTbins[:],
+        "#alpha_{T} > 0.53 in signal region, #Delta #phi < 0.3"],  # dPhi* <0.3 in SR, fine jet multiplicity, fixed cross-cleaner
+
+    ["/Users/robina/AlphaT/Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0",
+        "./14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0/",
+        allHTbins[:],
+        "#alpha_{T} > 0.55 in signal region, #Delta#phi^{*}_{min} < 0.3"]
+
+    # ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/",
+    #     "11Dec_aT_0p53_forRobin_v0_MuonInJet",
+    #     allHTbins[3:],
+    #     "#alpha_{T} > 0.53 in signal region"],  # muon in jet
+
+    # ["/Users/robina/Dropbox/AlphaT/Root_Files_04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0",
+    #     "./04Dec_aT_0p53_fullHT_dPhi_lt0p3_v0_new/",
+    #     allHTbins[:],
+    #     "#alpha_{T} > 0.53 in signal region, #Delta #phi < 0.3"],  # dPhi* <0.3 in SR - old
+][-1]
+
+###############################################
 # Variable(s) you want to plot
-plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
-             "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
-             "MHTovMET", "EffectiveMass", "Number_Good_verticies",
-             "JetMultiplicity", "ComMinBiasDPhi_acceptedJets"]
+###############################################
+# plot_vars = ["Number_Btags", "AlphaT", "LeadJetPt", "LeadJetEta",
+#              "SecondJetPt", "SecondJetEta", "HT", "MHT", "MET_Corrected",
+#              "MHTovMET", "EffectiveMass", "Number_Good_verticies",
+#              "JetMultiplicity", "ComMinBiasDPhi_acceptedJets"]
+plot_vars = ["ComMinBiasDPhi_acceptedJets", "AlphaT", "ComMinBiasDPhi",
+             "JetMultiplicity", "HT", "Number_Btags", "CommonJetPt",
+             "CommonJetEta", "MET", "MHT", "Number_Good_verticies"]
 # plot_vars = ["ComMinBiasDPhi_acceptedJets", "MET_Corrected", "MHT", "LeadJetEta", "Number_Good_verticies"][4:] # for the website plots?
 
+###############################################
 # Custom bins for AlphaT per Rob's suggestion
+###############################################
 alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 5.5, 0.5)))
 
 dphi_bins = np.arange(0.0, 4.1, 0.1)
@@ -73,11 +113,12 @@ rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
 log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
 
 
-def do_a_plot_HT_incl(var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b", check=False):
-    # Inclusive HT
+def do_a_plot_HT_incl(root_dir, var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b", check=False, custom_title="#alpha_{T} > 0.53"):
+    """Inclusive HT plot"""
     rebin = rebin_d[var] if var in rebin_d else 2
     log = True if var in log_these else False
-    plot = Prediction_Plot(ROOTdir, out_dir, var, njet, btag, HTbins, rebin, log)
+    htbins = [h for h in HTbins if "upwards" in h]
+    plot = PredictionPlot(root_dir, out_dir, var, njet, btag, HTbins, rebin, log, custom_title)
     if check:
         if not os.path.isfile(plot.outname+".png"):
             print "python shape_plots.py -v %s -j %s -b %s" % (var, njet, btag)
@@ -86,12 +127,13 @@ def do_a_plot_HT_incl(var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b
         plot.save()
 
 
-def do_a_plot_HT_excl(var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, check=False):
-    # exclusive HT bins - do one by one
+def do_a_plot_HT_excl(root_dir, var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, check=False, custom_title="#alpha_{T} > 0.53"):
+    """exclusive HT bins - do one by one"""
+    htbins = [h for h in htbins if "upwards" not in h]
     for ht in htbins:
         rebin = rebin_d[var] if var in rebin_d else 2
         log = True if var in log_these else False
-        plot = Prediction_Plot(ROOTdir, out_dir, var, njet, btag, [ht], rebin, log)
+        plot = PredictionPlot(root_dir, out_dir, var, njet, btag, [ht], rebin, log, custom_title)
         if check:
             if not os.path.isfile(plot.outname+".png"):
                 print "python shape_plots.py -v %s -j %s -b %s --ht %s" % (var, njet, btag, ht)
@@ -106,7 +148,7 @@ def do_a_plot_HT_excl(var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, che
     # pres.make_pres(plot_dir=out_dir, var=var, njet=njet, btag=btag, lo_ht=lo, hi_ht=hi)
 
 
-if __name__ == "__main__":
+def main():
     """
     Mainly parse user args.
 
@@ -115,11 +157,11 @@ if __name__ == "__main__":
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--do_exclusive_HT", help="if you want plots done in for all HT bins indivudally rather than for inclusive HT", action='store_true', default=False)
+    parser.add_argument("--exclusive_HT", help="if you want plots done in for all HT bins indivudally rather than for inclusive HT", action='store_true', default=False)
     parser.add_argument("-v", "--var", help="variable to plot (if undefined, runs over all)", nargs="+")
     parser.add_argument("-j", "--njet", help="number of jets (if undefined, runs over all)", nargs="+")
     parser.add_argument("-b", "--btag", help="number of btags (if undefined, runs over all)", nargs="+")
-    parser.add_argument("--ht", help="specify HT bin(s). This overrides --do_exclusive_HT", nargs="+")
+    parser.add_argument("--ht", help="specify HT bin(s) (if undefined, runs over all inclusive)", nargs="+")
     parser.add_argument("-c", "--check", help ="don't make plots, just check they exist. prints list of those that don't so you can run them again.", action='store_true', default=False)
     args = parser.parse_args()
 
@@ -137,11 +179,12 @@ if __name__ == "__main__":
     if args.btag:
         run_btag = list(set(n_b) & set(args.btag))
     if args.ht:
+        args.exclusive_HT = True
         run_ht = list(set(HTbins) & set(args.ht))
 
 
     # user feedback
-    if args.do_exclusive_HT:
+    if args.exclusive_HT:
         print "Doing exclusive HT bins"
     else:
         print "Doing inclusive HT"
@@ -162,10 +205,19 @@ if __name__ == "__main__":
         print "Making lots of data VS bg plots..."
 
     # actually do something
-    for v, j, b in product(run_vars, run_njet, run_btag):
-        if args.ht:
-            do_a_plot_HT_excl(var=v, njet=j, btag=b, htbins=run_ht, check=args.check)
-        elif args.do_exclusive_HT:
-            do_a_plot_HT_excl(var=v, njet=j, btag=b, htbins=HTbins, check=args.check)
+    run_over(root_dir=ROOTdir, plot_vars=run_vars, njet=run_njet, btag=run_btag, htbins=run_ht, exclusive_HT=args.exclusive_HT, check=args.check, custom_title=title)
+
+
+def run_over(root_dir, plot_vars=plot_vars, njet=n_j, btag=n_b, htbins=allHTbins, exclusive_HT=False, check=False, custom_title="#alpha_{T} > 0.53"):
+    """
+    Method to run over all vars/njet/btag/HT bins
+    """
+    for v, j, b in product(plot_vars, njet, btag):
+        if exclusive_HT:
+            do_a_plot_HT_excl(root_dir=root_dir, var=v, njet=j, btag=b, htbins=htbins, check=check, custom_title=title)
         else:
-            do_a_plot_HT_incl(var=v, njet=j, btag=b, check=args.check)
+            do_a_plot_HT_incl(root_dir=root_dir, var=v, njet=j, btag=b, check=check, custom_title=title)
+
+
+if __name__ == "__main__":
+    main()
