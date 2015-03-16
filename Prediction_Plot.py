@@ -60,7 +60,9 @@ class PredictionPlot():
         self.autorange_y = True  # to auto set y range for sensible range
         unique = self.njet_string+self.btag_string+self.htstring+self.var  # need unique names to stop segfault
         unique = "" # but not when actually running...
-        self.c = r.TCanvas("c"+unique, "", 1200, 1000)
+        self.c = r.gROOT.FindObject("c"+unique)
+        if not self.c:
+            self.c = r.TCanvas("c"+unique, "", 1200, 1000)
         self.c.cd()  # this seems important to avoid segfaults
         self.up = r.TPad("u"+unique, "", 0.01, 0.25, 0.99, 0.99)
         self.dp = r.TPad("d"+unique, "", 0.01, 0.01, 0.99, 0.25)
