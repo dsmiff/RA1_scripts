@@ -602,7 +602,7 @@ class PredictionPlot():
             self.hist_data_signal.Draw("SAME")
         else:
             # Trust ROOT to set y axis sensibly
-            print "trusting ROOT to do y range correctly"
+            # print "trusting ROOT to do y range correctly"
             self.hist_data_signal.Draw()
             self.shape_stack.Draw("HIST SAME")
             if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)

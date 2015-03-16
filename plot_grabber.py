@@ -215,8 +215,8 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
         else:
             jet_string = jet_string_old
             trig_eff = trig_eff_old
-        print f_path
-        print "%s/%s_%s" % (d, h_title, jet_string(njet))
+        # print f_path
+        # print "%s/%s_%s" % (d, h_title, jet_string(njet))
         h_tmp = f.Get("%s/%s_%s" % (d, h_title, jet_string(njet)))
         if not h_tmp:
             raise Exception("Cannot get plot %s/%s_%s" % (d, h_title, jet_string(njet)) )
