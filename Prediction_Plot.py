@@ -343,7 +343,11 @@ class PredictionPlot():
         """
         Plot h on a separate canvas
         """
-        cc = r.TCanvas("cc","")
+        # get a canvas - reuse the old one if it's available
+        cc = r.gROOT.FindObject("cc")
+        if not cc:
+            cc = r.TCanvas("cc","")
+            # cc = r.gRoot.FindObject("cc")
         cc.cd()
         cc.SetLogy(self.log)
         cc.SetTicks()
