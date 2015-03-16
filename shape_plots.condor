@@ -1,4 +1,4 @@
-Executable = shape_plots_condor.py
+Executable = shape_plots_condor.sh
 Universe = vanilla
 Output = plots.$(cluster).$(process).out
 Error = plots.$(cluster).$(process).err
@@ -13,9 +13,9 @@ request_memory = 500
 # use the ENV that is provided
 getenv = true
 # initialdir = /storage/ra12451/RA1/RA1_scripts
-transfer_input_files = /storage/ra12451/RA1/Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0
+transfer_input_files = /storage/ra12451/RA1/Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0,Prediction_Plot.py,plot_grabber.py,shape_plots.py,shape_plots_condor.py,make_component_pres.py
 transfer_output_files = 14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0
 
-arguments = $(process) /storage/ra12451/RA1/Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0 14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0
+arguments = $(process) Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0 14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0
 
 queue 12
