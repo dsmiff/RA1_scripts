@@ -200,6 +200,7 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
 
     if f_path:
         f = r.TFile.Open(f_path)
+        f.Get._creates = True  # not quite sure what this does. but it stops root from leaking memory and keeps it's ram usage MUCH smaller
     else:
         return
 
