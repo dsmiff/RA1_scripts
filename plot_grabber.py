@@ -203,6 +203,9 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
     else:
         return
 
+    if not f or f.IsZombie():
+        raise Exception("Cannot open file", f_path)
+
     h_total = None
     for d in get_dirs(htbins = ht_bins, sele = sele, btag = btag):
         if "fineJetMulti" in f_path:
@@ -214,6 +217,8 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
         print f_path
         print "%s/%s_%s" % (d, h_title, jet_string(njet))
         h_tmp = f.Get("%s/%s_%s" % (d, h_title, jet_string(njet)))
+        if not h_tmp:
+            raise Exception("Cannot get plot %s/%s_%s" % (d, h_title, jet_string(njet)) )
         h = h_tmp.Clone()
         if "Data" not in f_path:
             # apply ht bin trig effs
