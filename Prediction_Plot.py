@@ -587,9 +587,9 @@ class PredictionPlot():
                     self.shape_stack.SetMaximum(max_stack * 3.)
                     # get first hist with > 0 entries, as calling GetMinimum
                     # on one with 0 entries returns a dud number
-                    ind = next((h for f in self.error_hists_stat if h.GetEntries() > 0), -1)
-                    if ind >= 0:
-                        ymin = self.error_hists_stat[ind].GetMinimum(0) * 0.75
+                    h_nonzero = next((h for h in self.error_hists_stat if h.GetEntries() > 0), -1)
+                    if h_nonzero:
+                        ymin = h_nonzero.GetMinimum(0) * 0.75
                     else:
                         ymin = 0.1
                     # safeguard against stupid values
