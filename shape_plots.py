@@ -10,6 +10,8 @@ We can do this for bins of Njets, Nbtag, HT. And we look at lots of variables.
 
 And we make it look b-e-a-utiful.
 
+TODO: better structure for holding vars, rebin factors, log status etc
+
 Robin Aggleton
 
 """
@@ -76,13 +78,14 @@ ROOTdir, out_dir, HTbins, title = [
     ["/Users/robina/AlphaT/Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0",
         "./14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0/",
         allHTbins[:],
-        "#alpha_{T} > 0.55 in signal region, #Delta#phi^{*}_{min} < 0.3"]
+        "#alpha_{T} > 0.55 in signal region, #Delta#phi^{*}_{min} > 0.3"]
 
     # ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/",
     #     "11Dec_aT_0p53_forRobin_v0_MuonInJet",
     #     allHTbins[3:],
     #     "#alpha_{T} > 0.53 in signal region"],  # muon in jet
 ][-1]
+
 
 ###############################################
 # Variable(s) you want to plot
@@ -93,25 +96,25 @@ ROOTdir, out_dir, HTbins, title = [
 #              "JetMultiplicity", "ComMinBiasDPhi_acceptedJets"]
 plot_vars = ["ComMinBiasDPhi_acceptedJets", "AlphaT", "ComMinBiasDPhi",
              "JetMultiplicity", "HT", "Number_Btags", "CommonJetPt",
-             "CommonJetEta", "MET", "MHT", "Number_Good_verticies"]
-# plot_vars = ["ComMinBiasDPhi_acceptedJets", "MET_Corrected", "MHT", "LeadJetEta", "Number_Good_verticies"][4:] # for the website plots?
+             "CommonJetEta", "MET", "MET_Corrected", "MHT", "Number_Good_verticies"]
+
 
 ###############################################
 # Custom bins for AlphaT per Rob's suggestion
 ###############################################
 alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 5.5, 0.5)))
 
-dphi_bins = np.arange(0.0, 4.1, 0.1)
+dphi_bins = np.arange(0.0, 4.3, 0.1)
 
 rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-            "ComMinBiasDPhi_acceptedJets": dphi_bins, "AlphaT": alphaT_bins,
-            "MET_Corrected": 8, "HT": 10, "LeadJetPt": 5, "SecondJetPt": 5,
+            "ComMinBiasDPhi_acceptedJets": dphi_bins, "ComMinBiasDPhi": dphi_bins,
+            "AlphaT": alphaT_bins, "MET_Corrected": 8, "MET": 8, "HT": 10, "LeadJetPt": 5, "SecondJetPt": 5,
             "EffectiveMass": 10, "MHT": 4}
 
-log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
+log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "ComMinBiasDPhi","HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
 
 
-def do_a_plot_HT_incl(root_dir, var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b", check=False, custom_title="#alpha_{T} > 0.53"):
+def do_a_plot_HT_incl(root_dir, out_dir, var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b", check=False, custom_title="#alpha_{T} > 0.53"):
     """Inclusive HT plot"""
     rebin = rebin_d[var] if var in rebin_d else 2
     log = True if var in log_these else False
@@ -131,7 +134,7 @@ def do_a_plot_HT_incl(root_dir, var="ComMinBiasDPhi_acceptedJets", njet="eq3j", 
             plot.save()
 
 
-def do_a_plot_HT_excl(root_dir, var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, check=False, custom_title="#alpha_{T} > 0.53"):
+def do_a_plot_HT_excl(root_dir, out_dir, var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, check=False, custom_title="#alpha_{T} > 0.53"):
     """exclusive HT bins - do one by one"""
     htbins = [h for h in htbins if "upwards" not in h] # filter out inclusive ones
     for ht in htbins:
@@ -209,18 +212,18 @@ def main():
         print "Making lots of data VS bg plots..."
 
     # actually do something
-    run_over(root_dir=ROOTdir, plot_vars=run_vars, njet=run_njet, btag=run_btag, htbins=run_ht, exclusive_HT=args.exclusive_HT, check=args.check, custom_title=title)
+    run_over(root_dir=ROOTdir, out_dir=out_dir, plot_vars=run_vars, njet=run_njet, btag=run_btag, htbins=run_ht, exclusive_HT=args.exclusive_HT, check=args.check, custom_title=title)
 
 
-def run_over(root_dir, plot_vars=plot_vars, njet=n_j, btag=n_b, htbins=allHTbins, exclusive_HT=False, check=False, custom_title="#alpha_{T} > 0.53"):
+def run_over(root_dir, out_dir, plot_vars=plot_vars, njet=n_j, btag=n_b, htbins=allHTbins, exclusive_HT=False, check=False, custom_title="#alpha_{T} > 0.53"):
     """
     Method to run over all vars/njet/btag/HT bins
     """
     for v, j, b in product(plot_vars, njet, btag):
         if exclusive_HT:
-            do_a_plot_HT_excl(root_dir=root_dir, var=v, njet=j, btag=b, htbins=htbins, check=check, custom_title=title)
+            do_a_plot_HT_excl(root_dir=root_dir, out_dir=out_dir, var=v, njet=j, btag=b, htbins=htbins, check=check, custom_title=title)
         else:
-            do_a_plot_HT_incl(root_dir=root_dir, var=v, njet=j, btag=b, check=check, custom_title=title)
+            do_a_plot_HT_incl(root_dir=root_dir, out_dir=out_dir, var=v, njet=j, btag=b, check=check, custom_title=title)
 
 
 if __name__ == "__main__":
