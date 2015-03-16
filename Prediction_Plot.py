@@ -184,7 +184,7 @@ class PredictionPlot():
             self.color_hist(hist, r.kBlack, r.kOrange, r.kOrange)
         elif "Data" in region:
             hist.SetMarkerColor(r.kBlack)
-            # hist.SetMarkerSize(2)
+            hist.SetMarkerSize(1.2)
             hist.SetMarkerStyle(20)
             hist.SetLineColor(r.kBlack)
 
@@ -218,7 +218,7 @@ class PredictionPlot():
         Do some stylings on ratio plot
         """
         hist.SetMarkerColor(r.kBlack)
-        # hist.SetMarkerSize(2)
+        hist.SetMarkerSize(1.2)
         hist.SetMarkerStyle(20)
         hist.SetLineColor(r.kBlack)
         hist.GetYaxis().SetTitle("Data/MC")
@@ -254,13 +254,14 @@ class PredictionPlot():
         Generate blank legend
         """
         leg = r.TLegend(0.7, 0.49, 0.88, 0.72)
-        leg.SetFillColorAlpha(r.kWhite, 0.5)
-        leg.SetFillStyle(1001)
-        leg.SetCornerRadius(0.5)
+        # leg.SetFillColorAlpha(r.kWhite, 0.5)
+        leg.SetFillColor(0)
+	leg.SetFillStyle(0)
+        # leg.SetCornerRadius(0.5)
         leg.SetLineColor(0)
         leg.SetLineStyle(0)
         leg.SetLineWidth(0)
-        leg.SetLineColorAlpha(0, 0)
+        # leg.SetLineColorAlpha(0, 0)
         return leg
 
 
