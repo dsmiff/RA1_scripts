@@ -6,6 +6,7 @@ import numpy as np
 import os
 import array
 
+r.PyConfig.IgnoreCommandLineOptions = True
 r.TH1.SetDefaultSumw2(r.kFALSE)
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(1)
@@ -36,15 +37,15 @@ def check_dir_exists(d):
     if not os.path.isdir(opath):
         os.makedirs(opath)
 
-class Prediction_Plot():
+class PredictionPlot():
     """
     Class to make plot from data, BG shapes from data, and a neat ratio plot below that.
     Well, it would be neat if it didn't crash sometimes.
     """
 
-    def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log):
+    def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log, title):
         self.ROOTdir = ROOTdir
-        self.fineJetMulti = "fineJetMulti" in ROOTdir
+        self.fineJetMulti = "fineJetMulti" in ROOTdir # whether fine Jet Multiplciity or not
         self.out_stem = "Prediction"
         self.var = var
         self.njet = njet
@@ -75,7 +76,7 @@ class Prediction_Plot():
         self.hist_ratio_stat = None # For ratio plot MC stat err bars
         self.hist_ratio_stat_syst = None # For ratio plot MC stat+syst err bars
         self.stdtxt = self.make_standard_text()
-        self.cuttxt = self.make_bin_text(custom="#alpha_{T} > 0.53 in signal region")
+        self.cuttxt = self.make_bin_text(custom=title)
         self.leg = self.make_legend()
         self.plot_components = False  # plots ALL components, for debugging
         self.outdir = "%s/%s_%s_%s" % (out_dir, njet, btag, self.htstring)  # dir for putting all plots
@@ -250,12 +251,14 @@ class Prediction_Plot():
         """
         Generate blank legend
         """
-        leg = r.TLegend(0.68, 0.49, 0.87, 0.72)
-        leg.SetFillColor(0)
-        leg.SetFillStyle(0)
+        leg = r.TLegend(0.7, 0.49, 0.88, 0.72)
+        leg.SetFillColorAlpha(r.kWhite, 0.5)
+        leg.SetFillStyle(1001)
+        leg.SetCornerRadius(0.5)
         leg.SetLineColor(0)
         leg.SetLineStyle(0)
         leg.SetLineWidth(0)
+        leg.SetLineColorAlpha(0, 0)
         return leg
 
 
@@ -331,7 +334,7 @@ class Prediction_Plot():
         xmin = low_1 if low_1 < low_2 else low_2
         xmax = high_1 if high_1 > high_2 else high_2
         # xmin -= (2*h_1.GetBinWidth(1))  # add little bit of padding to LHS
-        xmax += 0.4 * (xmax-xmin)  # add some space to RHS
+        xmax += 0.5 * (xmax-xmin)  # add some space to RHS
         print xmin, xmax
         return xmin, xmax
 
@@ -412,7 +415,8 @@ class Prediction_Plot():
                                                          sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     hist_data_control.SetName(ctrl)  # for styling later
                     hist_data_control = self.rebin_hist(hist_data_control)
-                    if self.plot_components: self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                    if self.plot_components:
+                        self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
                     # print "Data in control reigon:", hist_data_control.Integral()
 
                     # MC in signal region
@@ -429,7 +433,8 @@ class Prediction_Plot():
                             # hist_mc_signal.Add(MC_signal_tmp)
 
                     # print "Total MC signal region:", hist_mc_signal.Integral()
-                    if self.plot_components: self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                    if self.plot_components:
+                        self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
                     # MC in control region
                     # print "MC in control region:"
@@ -446,12 +451,16 @@ class Prediction_Plot():
                             # hist_mc_control.Add(MC_ctrl_tmp)
 
                     # print "Total MC control region:", hist_mc_control.Integral()
-                    if self.plot_components: self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                    if self.plot_components:
+                        self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
                     hist_mc_signal.Divide(hist_mc_control)
-                    if self.plot_components: self.plot_component(hist_mc_signal, "mc_ratio_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                    if self.plot_components:
+                        self.plot_component(hist_mc_signal, "mc_ratio_%s_%s" % (ctrl, self.make_ht_string(ht)))
+
                     hist_data_control.Multiply(hist_mc_signal)
-                    if self.plot_components: self.plot_component(hist_data_control, "scaled_data_%s_%s" % (ctrl, self.make_ht_string(ht)))
+                    if self.plot_components:
+                        self.plot_component(hist_data_control, "scaled_data_%s_%s" % (ctrl, self.make_ht_string(ht)))
                     # hist_data_control = self.rebin_hist(hist_data_control) # This segfaults soometimes
 
                     # Calculate syst error on TF for this bin
@@ -560,15 +569,28 @@ class Prediction_Plot():
 
         if max_stack > max_data:
             self.shape_stack.Draw("HIST")
-            if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
+            if self.autorange_x:
+                self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
             # r.gPad.Update();
             # ymin = r.gPad.GetUymin()
             if self.autorange_y:
+                # Find the minimum of all the hists - use the error ones
+                # as we want to see the error bar as well
+                # This isn't trivial, as cnanot be 0 for log scale, and not
+                # every hist has entries
                 ymin = 0. # 0 for lin axis, non-0 for log
                 if self.log:
                     self.shape_stack.SetMaximum(max_stack * 3.)
-                    ymin = self.error_hists_stat[0].GetMinimum(0.) * 0.75
-                    if (ymin <= 0.): ymin = 0.01
+                    # get first hist with > 0 entries, as calling GetMinimum
+                    # on one with 0 entries returns a dud number
+                    ind = next((h for f in self.error_hists_stat if h.GetEntries() > 0), -1)
+                    if ind >= 0:
+                        ymin = self.error_hists_stat[ind].GetMinimum(0) * 0.75
+                    else:
+                        ymin = 0.1
+                    # safeguard against stupid values
+                    if (ymin <= 0.):
+                        ymin = 0.01
                 else:
                     self.shape_stack.SetMaximum(max_stack * 1.1)
                 self.shape_stack.SetMinimum(ymin)  # setting maximum somehow FUs min - do manually
@@ -576,6 +598,7 @@ class Prediction_Plot():
             self.hist_data_signal.Draw("SAME")
         else:
             # Trust ROOT to set y axis sensibly
+            print "trusting ROOT to do y range correctly"
             self.hist_data_signal.Draw()
             self.shape_stack.Draw("HIST SAME")
             if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)

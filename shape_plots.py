@@ -15,14 +15,14 @@ Robin Aggleton
 """
 
 import argparse
-import plot_grabber as grabr
 import ROOT as r
+import plot_grabber as grabr
 from itertools import product, izip
 import math
 import numpy as np
 import os
 import array
-from Prediction_Plot import Prediction_Plot
+from Prediction_Plot import PredictionPlot
 import sys
 import make_component_pres as pres
 
