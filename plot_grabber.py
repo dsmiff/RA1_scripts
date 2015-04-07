@@ -110,6 +110,9 @@ def trig_eff_old(sele = "OneMuon", ht = "", njet = ""):
                 "975_2":1.,     "975_3":1.,
                 "1075_2":1.,    "1075_3":1.,}
 
+    if "Photon" in sele:
+        return 1
+
     # print "> Trig corr (%s): %.3f" % (ht+"_"+njet, d[ht+"_"+njet])
 
     return d[ht+"_"+njet]
@@ -161,6 +164,9 @@ def trig_eff_fine(sele = "OneMuon", ht = "", njet = ""):
                 "975_1":1.,  "975_2":1.,   "975_3":1.,  "975_4":1.,
                 "1075_1":1., "1075_2":1.,  "1075_3":1., "1075_4":1.,}
 
+    if "Photon" in sele:
+        return 1
+
     # print "> Trig corr (%s): %.3f" % (ht+"_"+njet, d[ht+"_"+njet])
 
     return d[ht+"_"+njet]
@@ -172,7 +178,7 @@ def lumi(sele = "mu"):
             "Had": 18.493,
             "OneMuon": 19.131,
             "DiMuon": 19.131,
-            "ph": 19.12,
+            "Photon": 19.12
     }
 
     # print "> Lumi corr (%s): %.3f (*10.)" % (sele, d[sele])
@@ -188,12 +194,12 @@ def sb_corr(samp = ""):
             "DY": .94,
             "TTbar": 1.18,
             "DiBoson": 1.18,
-            "SingleTop": 1.18,
+            "SingleTop": 1.18
     }
 
     # print "> Sb corr (%s): %.2f" % (samp, d[samp])
 
-    return d[samp]
+    return d[samp] if samp in d.keys() else 1
 
 def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = "", ht_bins = []):
     """main function to extract single plot from various cats"""
@@ -215,8 +221,8 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
         else:
             jet_string = jet_string_old
             trig_eff = trig_eff_old
-        # print f_path
-        # print "%s/%s_%s" % (d, h_title, jet_string(njet))
+        print f_path
+        print "%s/%s_%s" % (d, h_title, jet_string(njet))
         h_tmp = f.Get("%s/%s_%s" % (d, h_title, jet_string(njet)))
         if not h_tmp:
             raise Exception("Cannot get plot %s/%s_%s" % (d, h_title, jet_string(njet)) )

@@ -13,7 +13,9 @@ r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 r.TH1.AddDirectory(r.kFALSE)
 
-# MC processes that go into transfer factors
+## FOR NORMAL HADRONIC PLOTS
+signal_proc = "Had"
+# # MC processes that go into transfer factors
 processes_mc_ctrl = ['DY', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']
 
 processes_mc_signal_le1b = {"OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'SingleTop'],
@@ -22,8 +24,20 @@ processes_mc_signal_le1b = {"OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'Sing
 processes_mc_signal_ge2b = {"OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'SingleTop', 'Zinv'],
                             "DiMuon": []}  # for >= 2btags dimu region not used
 
-# Control regions to get data shapes (+ proper titles for legend etc)
+# # Control regions to get data shapes (+ proper titles for legend etc)
 ctrl_regions = {"OneMuon": "Single #mu BG", "DiMuon": "#mu#mu BG"}
+
+## FOR DIMUON FROM PHOTON
+# signal_proc = "DiMuon"
+# # MC processes that go into transfer factors
+# processes_mc_ctrl = ['MC']
+
+# processes_mc_signal_le1b = {"Photon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']}
+
+# processes_mc_signal_ge2b = {"Photon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'Zinv', 'SingleTop']}
+
+# # Control regions to get data shapes (+ proper titles for legend etc)
+# ctrl_regions = {"Photon": "#mu#mu BG from #gamma"}
 
 # Sytematics on TF (as a %). Fn on njets & HT
 tf_systs = {
@@ -40,13 +54,12 @@ def check_dir_exists(d):
 class PredictionPlot():
     """
     Class to make plot from data, BG shapes from data, and a neat ratio plot below that.
-    Well, it would be neat if it didn't crash sometimes.
     """
 
     def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log, title):
         self.ROOTdir = ROOTdir
         self.fineJetMulti = "fineJetMulti" in ROOTdir # whether fine Jet Multiplciity or not
-        self.out_stem = "Prediction"
+        self.out_stem = "Prediction" # used for folder & plot names
         self.var = var
         self.njet = njet
         self.njet_string = grabr.jet_string_fine(njet) if self.fineJetMulti else grabr.jet_string_old(njet)
@@ -179,9 +192,11 @@ class PredictionPlot():
         Do some aesthetic stylings on hists, & rebin
         """
         if "OneMuon" in region:
-            self.color_hist(hist, r.kBlack, r.kViolet + 1, r.kViolet + 1)
+            self.color_hist(hist, line_color=r.kBlack, fill_color=r.kViolet+1, marker_color=r.kViolet+1)
         elif "DiMuon" in region:
-            self.color_hist(hist, r.kBlack, r.kOrange, r.kOrange)
+            self.color_hist(hist, line_color=r.kBlack, fill_color=r.kOrange, marker_color=r.kOrange)
+        elif "Photon" in region:
+            self.color_hist(hist, line_color=r.kBlack, fill_color=r.kGreen+2, marker_color=r.kGreen+2)
         elif "Data" in region:
             hist.SetMarkerColor(r.kBlack)
             hist.SetMarkerSize(1.2)
@@ -221,7 +236,7 @@ class PredictionPlot():
         hist.SetMarkerSize(1.2)
         hist.SetMarkerStyle(20)
         hist.SetLineColor(r.kBlack)
-        hist.GetYaxis().SetTitle("Data/MC")
+        hist.GetYaxis().SetTitle("Data/Pred")
         ratioY = self.up.GetAbsHNDC() / self.dp.GetAbsHNDC()
         # ratioX = self.up.GetAbsVNDC() / self.dp.GetAbsVNDC()
         # apparently hist.GetYaxis().Set... doesn't really work here?
@@ -395,12 +410,19 @@ class PredictionPlot():
         """
 
         for ctrl in ctrl_regions:
-            # print "**** DOING", ctrl
+            print "**** DOING", ctrl
 
             if "Muon" in ctrl:
-                f_start = "Muon"
+                ctrl_start = "Muon"
             elif "Photon" in ctrl:
-                f_start = "Photon"
+                ctrl_start = "Photon"
+
+            sig_start = "Had"
+            if "Muon" in signal_proc:
+                sig_start = "Muon"
+            elif "Photon" in signal_proc:
+                sig_start = "Photon"
+
 
             # Cumulative for this region
             hist_total = None
@@ -418,46 +440,44 @@ class PredictionPlot():
                 for ht in self.htbins:
 
                     # Data in control region:
-                    hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (self.ROOTdir, f_start),
+                    print "Data in control region"
+                    hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (self.ROOTdir, ctrl_start),
                                                          sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     hist_data_control.SetName(ctrl)  # for styling later
                     hist_data_control = self.rebin_hist(hist_data_control)
                     if self.plot_components:
                         self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
-                    # print "Data in control reigon:", hist_data_control.Integral()
+                    print "Data in control reigon:", hist_data_control.Integral()
 
                     # MC in signal region
-                    # print "MC in signal region:"
+                    print "MC in signal region:"
                     hist_mc_signal = None
                     for p in processes[ctrl]:
-                        MC_signal_tmp = grabr.grab_plots(f_path="%s/Had_%s.root" % (self.ROOTdir, p),
-                                                         sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                        # print p, MC_signal_tmp.Integral()
+                        MC_signal_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, sig_start, p),
+                                                         sele=signal_proc, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+                        print p, MC_signal_tmp.Integral()
                         if not hist_mc_signal:
                             hist_mc_signal = self.rebin_hist(MC_signal_tmp)
                         else:
                             hist_mc_signal.Add(self.rebin_hist(MC_signal_tmp))
-                            # hist_mc_signal.Add(MC_signal_tmp)
 
-                    # print "Total MC signal region:", hist_mc_signal.Integral()
+                    print "Total MC signal region:", hist_mc_signal.Integral()
                     if self.plot_components:
                         self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
                     # MC in control region
-                    # print "MC in control region:"
+                    print "MC in control region:"
                     hist_mc_control = None
                     for p in processes_mc_ctrl:
-                        MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, f_start, p),
+                        MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, ctrl_start, p),
                                                        sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                        # print p, MC_ctrl_tmp.Integral()
+                        print p, MC_ctrl_tmp.Integral()
                         if not hist_mc_control:
                             hist_mc_control = self.rebin_hist(MC_ctrl_tmp)
-                            # hist_mc_control = MC_ctrl_tmp
                         else:
                             hist_mc_control.Add(self.rebin_hist(MC_ctrl_tmp))
-                            # hist_mc_control.Add(MC_ctrl_tmp)
 
-                    # print "Total MC control region:", hist_mc_control.Integral()
+                    print "Total MC control region:", hist_mc_control.Integral()
                     if self.plot_components:
                         self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
@@ -505,8 +525,13 @@ class PredictionPlot():
 
 
         # Get data hist
-        self.hist_data_signal = grabr.grab_plots(f_path="%s/Had_Data.root" % self.ROOTdir,
-                                            sele="Had", h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=self.htbins)
+        sig_start = "Had"
+        if "Muon" in signal_proc:
+            sig_start = "Muon"
+        elif "Photon" in signal_proc:
+            sig_start = "Photon"
+        self.hist_data_signal = grabr.grab_plots(f_path="%s/%s_Data.root" % (self.ROOTdir, sig_start),
+                                            sele=signal_proc, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=self.htbins)
 
         self.hist_data_signal = self.rebin_hist(self.hist_data_signal)
         print "Data SR:", self.hist_data_signal.Integral()
