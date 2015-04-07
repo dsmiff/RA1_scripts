@@ -1,14 +1,24 @@
 #!/usr/bin/env python
 """
 This script makes data VS background plots, but gets the backgrounds from
-DATA control region shape, not MC. To do this, we define several control regions
-(for each BG source), use MC to calculate transfer factors, then scale the
-data control region plot by that factor. Oh yeah and whack in stat + syst
-uncertainties, latter from closure tests. (NB syst invalid for fine jet multiplicity)
+DATA control region shape, not MC.
 
-We can do this for bins of Njets, Nbtag, HT. And we look at lots of variables.
+Usage, see: python shape_plots.py --help
 
-And we make it look b-e-a-utiful.
+By default, it runs over all variables, btag bins, njet bins, for inclusive HT
+
+To setup for a new set of plots:
+
+1) make sure n_j/n_j_fine, n_b include the bins you want
+2) setup ROOTdir, out_dir, HTbins, title. For each set of plots,
+we add another list (with those vars) to the list. Make sure you
+select the correct entry
+3) edit the variables you want to plot, in plot_vars
+4) change the binning for a given variable, and whether to log/lin y-axis.
+5) run
+
+Note that you can optionally run over inclusive or exclusive HT bins,
+over specfic vars and specfic bins, using the command-line options.
 
 TODO: better structure for holding vars, rebin factors, log status etc,
 stop with the global vars,
@@ -53,7 +63,7 @@ n_b = ["eq0b", "eq1b", "eq2b", "ge1b", "ge2b", "ge0b"][:2]
 # input files, output directories, which HTbins to run over,
 # and custom title on plot (in addition to binning info)
 #
-# SELECT ONLY ONE OF THESE
+# ONLY SELECT ONE ENTRY
 ###############################################
 ROOTdir, out_dir, HTbins, title = [
     # ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0/",

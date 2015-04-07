@@ -1,3 +1,15 @@
+"""
+This script makes a data VS background plot, but gets the backgrounds from
+DATA control region shape, not MC. To do this, we define several control regions
+(for each BG source), use MC to calculate transfer factors, then scale the
+data control region plot by that factor. Oh yeah and whack in stat + syst
+uncertainties, latter from closure tests. (NB syst invalid for fine jet multiplicity)
+
+We can do this for bins of Njets, Nbtag, HT. And we look at lots of variables.
+
+And we make it look b-e-a-utiful.
+"""
+
 import plot_grabber as grabr
 import ROOT as r
 from itertools import product, izip
