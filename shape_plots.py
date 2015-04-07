@@ -10,7 +10,8 @@ We can do this for bins of Njets, Nbtag, HT. And we look at lots of variables.
 
 And we make it look b-e-a-utiful.
 
-TODO: better structure for holding vars, rebin factors, log status etc
+TODO: better structure for holding vars, rebin factors, log status etc,
+stop with the global vars,
 
 Robin Aggleton
 
@@ -41,11 +42,11 @@ r.gStyle.SetOptFit(1111)
 allHTbins = ["200_275", "275_325", "325_375", "375_475", "475_575",
           "575_675", "675_775", "775_875", "875_975", "975_1075", "1075"]# "200_upwards", "375_upwards"][:]
 
-n_j = ["le3j", "ge4j", "ge2j"][:]
+n_j = ["le3j", "ge4j", "ge2j"][:2]
 n_j_fine = ["eq2j", "eq3j", "eq4j", "ge5j"][:] # fine jet binning
 # n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b", "ge2b", "ge3b", "ge4b"][:]
 # n_b = ["eq0b", "eq1b", "eq2b", "eq3b", "ge0b", "ge1b", "ge2b", "ge4b"][:]
-n_b = ["eq0b", "eq1b", "eq2b", "ge1b", "ge2b", "ge0b"][:]
+n_b = ["eq0b", "eq1b", "eq2b", "ge1b", "ge2b", "ge0b"][:2]
 
 
 ###############################################
@@ -76,9 +77,14 @@ ROOTdir, out_dir, HTbins, title = [
         "#alpha_{T} > 0.53 in signal region, #Delta #phi < 0.3"],  # dPhi* <0.3 in SR, fine jet multiplicity, fixed cross-cleaner
 
     ["/Users/robina/AlphaT/Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0",
-        "./14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0/",
+        "./14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0_PhotonToDiMuon/",
         allHTbins[:],
-        "#alpha_{T} > 0.55 in signal region, #Delta#phi^{*}_{min} > 0.3"]
+        "#gamma #rightarrow #mu#mu, #alpha_{T} > 0.55 in signal region, #Delta#phi^{*}_{min} > 0.3"],
+
+   ["/Users/robina/AlphaT/Root_Files_03April_0p507_fullLatest_htTrigs_v0",
+        "./03April_0p507_fullLatest_htTrigs_v0/",
+        allHTbins[-4:], # only need for 775 onwards
+        "#alpha_{T} > 0.507"]
 
     # ["/Users/robina/Dropbox/AlphaT/Root_Files_11Dec_aT_0p53_forRobin_v0_MuonInJet/",
     #     "11Dec_aT_0p53_forRobin_v0_MuonInJet",
@@ -97,18 +103,22 @@ ROOTdir, out_dir, HTbins, title = [
 plot_vars = ["ComMinBiasDPhi_acceptedJets", "AlphaT", "ComMinBiasDPhi",
              "JetMultiplicity", "HT", "Number_Btags", "CommonJetPt",
              "CommonJetEta", "MET", "MET_Corrected", "MHT", "Number_Good_verticies"]
+plot_vars = ["ComMinBiasDPhi_acceptedJets", "AlphaT", "ComMinBiasDPhi",
+             "HT", "MET", "MET_Corrected", "MHT"]
 
 
 ###############################################
 # Custom bins for AlphaT per Rob's suggestion
 ###############################################
-alphaT_bins = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 5.5, 0.5)))
+alphaT_binning = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 5.5, 0.5)))
 
-dphi_bins = np.arange(0.0, 4.3, 0.1)
-
+dphi_binning = np.arange(0.0, 4.3, 0.1)
+# make sure it's anumpy array NOT a py list - cos ROOT is stooopid
+ht_binning = np.array([200, 275, 325, 375, 475, 575, 675, 775, 875, 975, 1075, 1500])
+# ht_binning = 2
 rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
-            "ComMinBiasDPhi_acceptedJets": dphi_bins, "ComMinBiasDPhi": dphi_bins,
-            "AlphaT": alphaT_bins, "MET_Corrected": 8, "MET": 8, "HT": 10, "LeadJetPt": 5, "SecondJetPt": 5,
+            "ComMinBiasDPhi_acceptedJets": dphi_binning, "ComMinBiasDPhi": dphi_binning,
+            "AlphaT": alphaT_binning, "MET_Corrected": 5, "MET": 5, "HT": ht_binning, "LeadJetPt": 5, "SecondJetPt": 5,
             "EffectiveMass": 10, "MHT": 4}
 
 log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "ComMinBiasDPhi","HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
@@ -118,7 +128,7 @@ def do_a_plot_HT_incl(root_dir, out_dir, var="ComMinBiasDPhi_acceptedJets", njet
     """Inclusive HT plot"""
     rebin = rebin_d[var] if var in rebin_d else 2
     log = True if var in log_these else False
-    htbins_incl = ["200_upwards", "375_upwards"]
+    htbins_incl = ["200_upwards", "375_upwards", "775_upwards"]
     for ht in htbins_incl:
         # hack - assume we don't have 200_upwards or similar
         # in that case we just pass a list of ht bins that are equivalent
@@ -191,14 +201,14 @@ def main():
 
 
     # user feedback
-    if args.exclusive_HT:
-        print "Doing exclusive HT bins"
-    else:
-        print "Doing inclusive HT"
     print "vars:", run_vars
     print "njet:", run_njet
     print "btag:", run_btag
     print "ht:", run_ht
+    if args.exclusive_HT:
+        print "Doing exclusive HT bins"
+    else:
+        print "Doing inclusive HT"
 
     # check that none are empty
     if not run_vars or not run_njet or not run_btag or not run_ht:
