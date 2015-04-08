@@ -7,6 +7,9 @@ uncertainties, latter from closure tests. (NB syst invalid for fine jet multipli
 
 We can do this for bins of Njets, Nbtag, HT. And we look at lots of variables.
 
+Note that for inclusive HT, we do the prediction in each HT bin and sum together.
+This is the way the main analysis does it...
+
 And we make it look b-e-a-utiful.
 """
 
@@ -37,7 +40,7 @@ processes_mc_signal_ge2b = {"OneMuon": ['DY', 'DiBoson', 'TTbar', 'WJets', 'Sing
                             "DiMuon": []}  # for >= 2btags dimu region not used
 
 # # Control regions to get data shapes (+ proper titles for legend etc)
-ctrl_regions = {"OneMuon": "Single #mu BG", "DiMuon": "#mu#mu BG"}
+ctrl_regions = {"OneMuon": "Single #mu BG", "DiMuon": "#mu#mu BG", "QCD": "QCD BG (MC)"}
 
 ## FOR DIMUON FROM PHOTON
 # signal_proc = "DiMuon"
@@ -68,7 +71,7 @@ class PredictionPlot():
     Class to make plot from data, BG shapes from data, and a neat ratio plot below that.
     """
 
-    def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log, title):
+    def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log, title, qcd=True):
         self.ROOTdir = ROOTdir
         self.fineJetMulti = "fineJetMulti" in ROOTdir # whether fine Jet Multiplciity or not
         self.out_stem = "Prediction" # used for folder & plot names
@@ -109,6 +112,7 @@ class PredictionPlot():
         self.outdir = "%s/%s_%s_%s" % (out_dir, njet, btag, self.htstring)  # dir for putting all plots
         check_dir_exists(self.outdir)
         self.outname = "%s/%s_%s_%s_%s%s%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag_string, "_" if self.btag_string else "", self.htstring) # output file dir+name (without extension)
+        self.qcd = qcd  # whether to add in QCD MC in signal region. NOTE: *NOT* included in ratio plot
 
     # def __del__(self):
     #     """
@@ -135,7 +139,15 @@ class PredictionPlot():
         # Now make plots
         self.make_main_plot(self.up)
         self.c.cd()
-        self.make_ratio_plot(self.dp, self.hist_data_signal, self.error_hists_stat_syst[-1], self.error_hists_stat[-1], self.error_hists_stat_syst[-1])
+
+        # Take out the QCD MC from the ratio plot
+        hist_mc_stat = self.error_hists_stat[:]
+        hist_mc_stat_syst = self.error_hists_stat_syst[:]
+        for h1,h2 in zip(hist_mc_stat,hist_mc_stat_syst):
+            if "QCD" in h1.GetName().upper():
+                hist_mc_stat.remove(h1)
+                hist_mc_stat_syst.remove(h2)
+        self.make_ratio_plot(self.dp, self.hist_data_signal, hist_mc_stat_syst[-1], hist_mc_stat[-1], hist_mc_stat_syst[-1])
         self.c.cd()
 
 
@@ -214,6 +226,8 @@ class PredictionPlot():
             hist.SetMarkerSize(1.2)
             hist.SetMarkerStyle(20)
             hist.SetLineColor(r.kBlack)
+        elif "QCD" in region:
+            self.color_hist(hist, line_color=r.kBlack, fill_color=r.kAzure+1, marker_color=r.kAzure+1)
 
 
     def style_hist_err1(self, hist):
@@ -283,7 +297,7 @@ class PredictionPlot():
         leg = r.TLegend(0.7, 0.49, 0.88, 0.72)
         # leg.SetFillColorAlpha(r.kWhite, 0.5)
         leg.SetFillColor(0)
-	leg.SetFillStyle(0)
+    	leg.SetFillStyle(0)
         # leg.SetCornerRadius(0.5)
         leg.SetLineColor(0)
         leg.SetLineStyle(0)
@@ -448,7 +462,7 @@ class PredictionPlot():
             else:
                 processes = processes_mc_signal_ge2b
 
-            if processes[ctrl]:
+            if ctrl in processes:
                 for ht in self.htbins:
 
                     # Data in control region:
@@ -516,13 +530,10 @@ class PredictionPlot():
 
                     # print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
 
-                # hist_total = self.rebin_hist(hist_total)
+                # Add the prediction to a list
                 self.component_hists.append(hist_total)
 
                 # Do stat+syst err hists for this control region & store (NB cumulative)
-                # hist_stat_total = self.rebin_hist(hist_stat_total)
-                # hist_syst_total = self.rebin_hist(hist_syst_total)
-
                 self.style_hist_err1(hist_stat_total)
                 self.style_hist_err2(hist_syst_total)
 
@@ -535,6 +546,44 @@ class PredictionPlot():
                     hist_syst_total.Add(self.error_hists_stat_syst[-1])
                     self.error_hists_stat_syst.append(hist_syst_total)
 
+        # Add in QCD in signal region if desired
+        if self.qcd:
+            hist_qcd = None
+            hist_qcd_stat = None
+            hist_qcd_syst = None
+            for ht in self.htbins:
+                h_qcd_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, "Had", "QCD"),
+                                             sele=signal_proc, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
+                print "QCD", h_qcd_tmp.Integral()
+                h_qcd_tmp.SetName("QCD")  # for styling later
+                h_qcd_tmp = self.rebin_hist(h_qcd_tmp)
+                if not hist_qcd:
+                    hist_qcd = h_qcd_tmp
+                else:
+                    hist_qcd.Add(h_qcd_tmp)
+                # stat & syst error bars for this ht bin (as syst ht-specific)
+                h_qcd_stat = h_qcd_tmp.Clone()
+                h_qcd_syst = h_qcd_tmp.Clone()
+                self.set_syst_errors(h_qcd_syst, ht, self.njet)
+                if not hist_qcd_stat:
+                    hist_qcd_stat = h_qcd_stat
+                    hist_qcd_syst = h_qcd_syst
+                else:
+                    hist_qcd_stat.Add(h_qcd_stat)
+                    hist_qcd_syst.Add(h_qcd_syst)
+
+                print hist_qcd_stat.Integral()
+
+            self.component_hists.append(hist_qcd)
+
+            # stat & syst error bars for QCD overall
+            self.style_hist_err1(hist_qcd_stat)
+            self.style_hist_err2(hist_qcd_syst)
+            hist_qcd_stat.Add(self.error_hists_stat[-1])
+            self.error_hists_stat.append(hist_qcd_stat)
+            hist_qcd_syst.Add(self.error_hists_stat_syst[-1])
+            self.error_hists_stat_syst.append(hist_qcd_syst)
+            print hist_qcd_stat.Integral()
 
         # Get data hist
         sig_start = "Had"
@@ -578,6 +627,7 @@ class PredictionPlot():
             # Some shimmer BEFORE adding to stack
             self.style_hist(h, h.GetName())
             self.shape_stack.Add(h)
+            # print h.GetName()
 
         print "BG estimate from data:", self.shape_stack.GetStack().Last().Integral()
         # print "BG estimate from data:", self.error_hists_stat[-1].Integral()
@@ -666,9 +716,13 @@ class PredictionPlot():
         self.cuttxt.Draw("SAME")
 
 
-    def make_ratio_plot(self, pad, h_data, h_mc, h_mc_stat=None, h_mc_stat_syst=None, fit=True):
+    def make_ratio_plot(self, pad, h_data, h_mc, h_mc_stat=None, h_mc_stat_syst=None, fit=False):
         """
         Makes the little data/MC ratio plot
+        h_mc is the total prediction
+        h_mc_stat is the hist of the total stat error on the prediction
+        h_mc_stat_syst is the hist of the total stat+syst error on the prediction
+        fit is whether to fit a straight line to the ratio points.
         """
         pad.Draw()
         pad.cd()
