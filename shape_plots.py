@@ -124,8 +124,9 @@ alphaT_binning = np.concatenate((np.arange(0.5, 1.0, 0.05), np.arange(1.0, 5.5, 
 
 dphi_binning = np.arange(0.0, 4.3, 0.1)
 # make sure it's anumpy array NOT a py list - cos ROOT is stooopid
-ht_binning = np.array([200, 275, 325, 375, 475, 575, 675, 775, 875, 975, 1075, 1500])
-# ht_binning = 2
+ht_binning = np.arange(775,1175,100)
+# np.array([200, 275, 325, 375, 475, 575, 675, 775, 875, 975, 1075, 1500][-5:])
+ht_binning = 6
 rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
             "ComMinBiasDPhi_acceptedJets": dphi_binning, "ComMinBiasDPhi": dphi_binning,
             "AlphaT": alphaT_binning, "MET_Corrected": 5, "MET": 5, "HT": ht_binning, "LeadJetPt": 5, "SecondJetPt": 5,
@@ -133,9 +134,13 @@ rebin_d = {"Number_Btags": 1, "JetMultiplicity": 1, "MHTovMET": 1,
 
 log_these = ["AlphaT", "ComMinBiasDPhi_acceptedJets", "ComMinBiasDPhi","HT", "LeadJetPt", "SecondJetPt", "EffectiveMass"]
 
+# whether to plot QCD from MC in hadronic region (not a prediction)
+qcd = False
 
-def do_a_plot_HT_incl(root_dir, out_dir, var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b", check=False, custom_title="#alpha_{T} > 0.53"):
+
+def do_a_plot_HT_incl(root_dir, out_dir, var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b", check=False, custom_title="#alpha_{T} > 0.55"):
     """Inclusive HT plot"""
+
     rebin = rebin_d[var] if var in rebin_d else 2
     log = True if var in log_these else False
     htbins_incl = ["200_upwards", "375_upwards", "775_upwards"]
@@ -145,7 +150,7 @@ def do_a_plot_HT_incl(root_dir, out_dir, var="ComMinBiasDPhi_acceptedJets", njet
         lower = ht.split("_")[0]
         htbins = [h for h in HTbins if int(h.split("_")[0]) >= int(lower)]
 
-        plot = PredictionPlot(root_dir, out_dir, var, njet, btag, htbins, rebin, log, custom_title)
+        plot = PredictionPlot(root_dir, out_dir, var, njet, btag, htbins, rebin, log, custom_title, qcd)
         if check:
             if not os.path.isfile(plot.outname+".png"):
                 print "python shape_plots.py -v %s -j %s -b %s" % (var, njet, btag)
@@ -154,13 +159,14 @@ def do_a_plot_HT_incl(root_dir, out_dir, var="ComMinBiasDPhi_acceptedJets", njet
             plot.save()
 
 
-def do_a_plot_HT_excl(root_dir, out_dir, var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, check=False, custom_title="#alpha_{T} > 0.53"):
+def do_a_plot_HT_excl(root_dir, out_dir, var="AlphaT", njet="le3j", btag="eq0b", htbins=HTbins, check=False, custom_title="#alpha_{T} > 0.55"):
     """exclusive HT bins - do one by one"""
+
     htbins = [h for h in htbins if "upwards" not in h] # filter out inclusive ones
     for ht in htbins:
         rebin = rebin_d[var] if var in rebin_d else 2
         log = True if var in log_these else False
-        plot = PredictionPlot(root_dir, out_dir, var, njet, btag, [ht], rebin, log, custom_title)
+        plot = PredictionPlot(root_dir, out_dir, var, njet, btag, [ht], rebin, log, custom_title, qcd)
         if check:
             if not os.path.isfile(plot.outname+".png"):
                 print "python shape_plots.py -v %s -j %s -b %s --ht %s" % (var, njet, btag, ht)
@@ -168,7 +174,7 @@ def do_a_plot_HT_excl(root_dir, out_dir, var="AlphaT", njet="le3j", btag="eq0b",
             plot.plot_components = True
             plot.make_plots()
             plot.save()
-    # optionally can do component plots as well for this var
+    # optionally can do component presentation as well for this var
     # lo = HTbins[0].split("_")[0]
     # hi = HTbins[-1].split("_")[1] if "_" in HTbins[-1] else "Inf"
     # print "Make component pres"
