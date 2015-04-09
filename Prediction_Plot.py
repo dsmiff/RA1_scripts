@@ -80,7 +80,7 @@ class PredictionPlot():
     Class to make plot from data, BG shapes from data, and a neat ratio plot below that.
     """
 
-    def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log, title, qcd=True):
+    def __init__(self, ROOTdir, out_dir, var, njet, btag, htbins, rebin, log, title, qcd=False):
         self.ROOTdir = ROOTdir
         self.fineJetMulti = "fineJetMulti" in ROOTdir # whether fine Jet Multiplciity or not
         self.out_stem = "Prediction" # used for folder & plot names
@@ -120,23 +120,16 @@ class PredictionPlot():
         self.plot_components = False  # plots ALL components, for debugging
         self.outdir = "%s/%s_%s_%s" % (out_dir, njet, btag, self.htstring)  # dir for putting all plots
         check_dir_exists(self.outdir)
-        self.outname = "%s/%s_%s_%s_%s%s%s" % (self.outdir, self.out_stem, self.var, self.njet_string, self.btag_string, "_" if self.btag_string else "", self.htstring) # output file dir+name (without extension)
         self.qcd = qcd  # whether to add in QCD MC in signal region. NOTE: *NOT* included in ratio plot
-
-    # def __del__(self):
-    #     """
-    #     destructor to test why segfaults. prob wanna delete this.
-    #     """
-    #     # self.hist_data_signal.IsA().Destructor(self.hist_data_signal)
-    #     print "Cleaned up my stuff", self.hist_data_signal
-    #     for h in self.component_hists:
-    #         del h
-    #     del self.shape_stack
-    #     del self.error_hists_stat
-    #     del self.error_hists_stat_syst
-    #     del self.up
-    #     del self.dp
-    #     del self.c
+        # output file dir+name (without extension)
+        self.outname = "%s/%s_%s_%s_%s%s%s%s" % (self.outdir,
+                                                 self.out_stem,
+                                                 self.var,
+                                                 self.njet_string,
+                                                 self.btag_string,
+                                                 "_" if self.btag_string else "",
+                                                 self.htstring,
+                                                 "_QCD" if self.qcd else "")
 
 
     def make_plots(self):
@@ -272,6 +265,8 @@ class PredictionPlot():
         hist.SetMarkerStyle(20)
         hist.SetLineColor(r.kBlack)
         hist.GetYaxis().SetTitle("Data/Pred")
+        if self.qcd:
+            hist.GetYaxis().SetTitle("Data/Pred (no QCD)")
         ratioY = self.up.GetAbsHNDC() / self.dp.GetAbsHNDC()
         # ratioX = self.up.GetAbsVNDC() / self.dp.GetAbsVNDC()
         # apparently hist.GetYaxis().Set... doesn't really work here?
