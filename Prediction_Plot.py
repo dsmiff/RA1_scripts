@@ -13,6 +13,7 @@ This is the way the main analysis does it...
 And we make it look b-e-a-utiful.
 """
 
+import logging
 import plot_grabber as grabr
 import ROOT as r
 from itertools import product, izip
@@ -27,6 +28,14 @@ r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 r.TH1.AddDirectory(r.kFALSE)
+
+# setup logger
+console_handler = logging.StreamHandler()
+root = logging.getLogger()
+root.addHandler(console_handler)
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+
 
 ## FOR NORMAL HADRONIC PLOTS
 signal_proc = "Had"
@@ -203,8 +212,8 @@ class PredictionPlot():
             return hist.Rebin(len(rebin)-1, hist.GetName(), rebin)
         else:
             if (hist.GetNbinsX() % rebin != 0):
-                print "WARNING: rebin factor not exact divisor of number of bins - not rebinning"
-                print "Original:", hist.GetNbinsX(), "Tried rebin factor:", rebin
+                log.warning("WARNING: rebin factor not exact divisor of number of bins - not rebinning")
+                log.warning("Original: %d, Tried rebin factor: %d" % (hist.GetNbinsX(), rebin))
                 rebin = 1
             if rebin != 1:
                 return hist.Rebin(int(rebin))
@@ -379,7 +388,7 @@ class PredictionPlot():
         xmax = high_1 if high_1 > high_2 else high_2
         # xmin -= (2*h_1.GetBinWidth(1))  # add little bit of padding to LHS
         xmax += 0.4 * (xmax-xmin)  # add some space to RHS
-        print xmin, xmax
+        log.debug("xmin: %g, xmax: %g"% (xmin, xmax))
         return xmin, xmax
 
 
@@ -419,7 +428,6 @@ class PredictionPlot():
             if self.fineJetMulti:
                 syst = 0
             err = np.hypot(h.GetBinError(i), syst)
-            # print syst, err
             h.SetBinError(i, err)
 
 
@@ -436,7 +444,7 @@ class PredictionPlot():
         """
 
         for ctrl in ctrl_regions:
-            print "**** DOING", ctrl
+            log.debug("**** DOING %s" % ctrl)
 
             if "Muon" in ctrl:
                 ctrl_start = "Muon"
@@ -466,44 +474,44 @@ class PredictionPlot():
                 for ht in self.htbins:
 
                     # Data in control region:
-                    print "Data in control region"
+                    log.debug("Data in control region")
                     hist_data_control = grabr.grab_plots(f_path="%s/%s_Data.root" % (self.ROOTdir, ctrl_start),
                                                          sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
                     hist_data_control.SetName(ctrl)  # for styling later
                     hist_data_control = self.rebin_hist(hist_data_control)
                     if self.plot_components:
                         self.plot_component(hist_data_control, "data_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
-                    print "Data in control reigon:", hist_data_control.Integral()
+                    log.debug("Data in control reigon: %g" % hist_data_control.Integral())
 
                     # MC in signal region
-                    print "MC in signal region:"
+                    log.debug("MC in signal region:")
                     hist_mc_signal = None
                     for p in processes[ctrl]:
                         MC_signal_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, sig_start, p),
                                                          sele=signal_proc, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                        print p, MC_signal_tmp.Integral()
+                        log.debug("%s %g" % (p, MC_signal_tmp.Integral()))
                         if not hist_mc_signal:
                             hist_mc_signal = self.rebin_hist(MC_signal_tmp)
                         else:
                             hist_mc_signal.Add(self.rebin_hist(MC_signal_tmp))
 
-                    print "Total MC signal region:", hist_mc_signal.Integral()
+                    log.debug("Total MC signal region: %g" % hist_mc_signal.Integral())
                     if self.plot_components:
                         self.plot_component(hist_mc_signal, "hist_mc_signal_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
                     # MC in control region
-                    print "MC in control region:"
+                    log.debug("MC in control region:")
                     hist_mc_control = None
                     for p in processes_mc_ctrl:
                         MC_ctrl_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, ctrl_start, p),
                                                        sele=ctrl, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                        print p, MC_ctrl_tmp.Integral()
+                        log.debug("%s %g" % (p, MC_ctrl_tmp.Integral()))
                         if not hist_mc_control:
                             hist_mc_control = self.rebin_hist(MC_ctrl_tmp)
                         else:
                             hist_mc_control.Add(self.rebin_hist(MC_ctrl_tmp))
 
-                    print "Total MC control region:", hist_mc_control.Integral()
+                    log.debug("Total MC control region: %g" % hist_mc_control.Integral())
                     if self.plot_components:
                         self.plot_component(hist_mc_control, "hist_mc_control_%s_%s" % (ctrl, self.make_ht_string(ht)))
 
@@ -528,7 +536,7 @@ class PredictionPlot():
                         hist_stat_total.Add(hist_data_control.Clone())
                         hist_syst_total.Add(h_syst)
 
-                    # print ctrl, "Estimate:", hist_data_control.Integral(), hist_data_control.GetNbinsX()
+                    # log.debug("%s Estimate: %g %g" % (ctrl, hist_data_control.Integral(), hist_data_control.GetNbinsX()))
 
                 # Add the prediction to a list
                 self.component_hists.append(hist_total)
@@ -554,7 +562,7 @@ class PredictionPlot():
             for ht in self.htbins:
                 h_qcd_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, "Had", "QCD"),
                                              sele=signal_proc, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                print "QCD", h_qcd_tmp.Integral()
+                log.debug("QCD %g" % h_qcd_tmp.Integral())
                 h_qcd_tmp.SetName("QCD")  # for styling later
                 h_qcd_tmp = self.rebin_hist(h_qcd_tmp)
                 if not hist_qcd:
@@ -572,8 +580,6 @@ class PredictionPlot():
                     hist_qcd_stat.Add(h_qcd_stat)
                     hist_qcd_syst.Add(h_qcd_syst)
 
-                print hist_qcd_stat.Integral()
-
             self.component_hists.append(hist_qcd)
 
             # stat & syst error bars for QCD overall
@@ -583,7 +589,7 @@ class PredictionPlot():
             self.error_hists_stat.append(hist_qcd_stat)
             hist_qcd_syst.Add(self.error_hists_stat_syst[-1])
             self.error_hists_stat_syst.append(hist_qcd_syst)
-            print hist_qcd_stat.Integral()
+            log.debug(hist_qcd_stat.Integral())
 
         # Get data hist
         sig_start = "Had"
@@ -595,7 +601,7 @@ class PredictionPlot():
                                             sele=signal_proc, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=self.htbins)
 
         self.hist_data_signal = self.rebin_hist(self.hist_data_signal)
-        print "Data SR:", self.hist_data_signal.Integral()
+        log.debug("Data SR: %g" % self.hist_data_signal.Integral())
 
 
     def make_main_plot(self, pad):
@@ -627,10 +633,8 @@ class PredictionPlot():
             # Some shimmer BEFORE adding to stack
             self.style_hist(h, h.GetName())
             self.shape_stack.Add(h)
-            # print h.GetName()
 
-        print "BG estimate from data:", self.shape_stack.GetStack().Last().Integral()
-        # print "BG estimate from data:", self.error_hists_stat[-1].Integral()
+        log.debug("BG estimate from data: %g" % self.shape_stack.GetStack().Last().Integral())
 
         # add entries to the legend
         self.leg.AddEntry(self.hist_data_signal, "Data + stat. error", "pl")
@@ -652,7 +656,7 @@ class PredictionPlot():
         sum_stack = self.shape_stack.GetStack().Last()  # the "sum" of component hists
         max_stack = sum_stack.GetMaximum() + self.error_hists_stat_syst[-1].GetBinError(sum_stack.GetMaximumBin())
         max_data = self.hist_data_signal.GetMaximum() + self.hist_data_signal.GetBinError(self.hist_data_signal.GetMaximumBin())
-        print max_stack, max_data
+        log.debug("max_stack %g, max_data %g" % (max_stack, max_data))
 
         if max_stack < 0. or max_data < 0.:
             raise Exception("max_stack (%f) or max_data(%f) < 0!" % (max_stack, max_data))
@@ -692,7 +696,6 @@ class PredictionPlot():
             self.hist_data_signal.Draw("SAME")
         else:
             # Trust ROOT to set y axis sensibly
-            # print "trusting ROOT to do y range correctly"
             self.hist_data_signal.Draw()
             self.shape_stack.Draw("HIST SAME")
             if self.autorange_x: self.shape_stack.GetXaxis().SetRangeUser(xmin, xmax)
@@ -771,9 +774,6 @@ class PredictionPlot():
         self.l.SetLineWidth(2)
         self.l.SetLineStyle(2)
         self.l.Draw()
-
-        # for i in range(1, 1+self.hist_ratio.GetNbinsX()):
-        #     print i, self.hist_ratio.GetBinCenter(i), ",", self.hist_ratio.GetBinContent(i)
 
         # Do fit to ratio
         # if (fit):
