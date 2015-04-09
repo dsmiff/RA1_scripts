@@ -622,13 +622,16 @@ class PredictionPlot():
 
         # Loop through shape components: mod style, add to THStack
         # Want to add hists to THStack by ascending Integral()
+        # EXCEPT for QCD hist - in which case we add it last, if it exists
         self.component_hists.sort(key=lambda hist: hist.Integral())
         for h in self.component_hists:
             h.SetBinErrorOption(r.TH1.kPoisson)
             # Some shimmer BEFORE adding to stack
             self.style_hist(h, h.GetName())
-            self.shape_stack.Add(h)
+            if "QCD" not in h.GetName():
+                self.shape_stack.Add(h)
 
+        self.shape_stack.Add(next((h for h in self.component_hists if "QCD" in h.GetName()), None))
         log.debug("BG estimate from data: %g" % self.shape_stack.GetStack().Last().Integral())
 
         # add entries to the legend
