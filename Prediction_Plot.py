@@ -466,6 +466,9 @@ class PredictionPlot():
                 processes = processes_mc_signal_ge2b
 
             if ctrl in processes:
+                if not processes[ctrl]:
+                        continue
+
                 for ht in self.htbins:
 
                     # Data in control region:
