@@ -207,7 +207,7 @@ def do_a_plot_HT_excl(root_dir, out_dir, var="AlphaT", njet="le3j", btag="eq0b",
     # pres.make_pres(plot_dir=out_dir, var=var, njet=njet, btag=btag, lo_ht=lo, hi_ht=hi)
 
 
-def main():
+def main(in_args=sys.argv[1:]):
     """
     Mainly parse user args.
 
@@ -223,7 +223,7 @@ def main():
     parser.add_argument("-ht", help="specify HT bin(s) (if undefined, runs over all inclusive)", nargs="+")
     parser.add_argument("-c", "--check", help="don't make plots, just check they exist. prints list of those that don't so you can run them again.", action='store_true', default=False)
     parser.add_argument("--qcd", help="Add in QCD to main plot, but ignore in ratio plot.", action='store_true', default=False)
-    args = parser.parse_args()
+    args = parser.parse_args(in_args)
 
     # Figure out which vars/njet/btags options to run over
     # Do the set intersection to validate input (silently tho, tut tut)
