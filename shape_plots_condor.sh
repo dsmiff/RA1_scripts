@@ -1,4 +1,7 @@
 #!/bin/bash -e
+
+# Script that condor runs on worker node
+
 VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
 host=`hostname`
 # some information for debugging

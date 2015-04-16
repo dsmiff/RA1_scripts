@@ -1,3 +1,14 @@
+# This is the main job file to run shape_plots on HTcondor
+#
+# It calls a shell script, which sets up ROOT on the worker 
+# node. That then calls a python script, which runs the plotter
+# over all the HT/njet/btag bins, for one variable.
+# Each job correspond to a different variable, so edit the number 
+# of jobs below to correspond to the number of variables in shape_plots.py
+#
+# Also edit the input/output dir.
+# Any other args you want to pass to shape_plots.py
+
 Executable = shape_plots_condor.sh
 Universe = vanilla
 Output = plots.$(cluster).$(process).out
@@ -12,10 +23,15 @@ request_memory = 500
 
 # use the ENV that is provided
 getenv = true
-# initialdir = /storage/ra12451/RA1/RA1_scripts
-transfer_input_files = /storage/ra12451/RA1/Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0,Prediction_Plot.py,plot_grabber.py,shape_plots.py,shape_plots_condor.py,make_component_pres.py
-transfer_output_files = 14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0
+# initialdir = /storage/ra12451/RA1/RA1_scriptsi
 
-arguments = $(process) Root_Files_14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0 14Mar_approved0p55_dPhi_gt0p3_inHadOny_newCC_CSCBeamHalo_v0
+input_root_files = Root_Files_07April_0p55_fullLatest_hadOnly_noPhi_v0
+output_dir = 07April_0p55_fullLatest_hadOnly_noPhi_v0
 
-queue 12
+transfer_input_files = /storage/ra12451/RA1/$(input_root_files),Prediction_Plot.py,plot_grabber.py,shape_plots.py,shape_plots_condor.py,make_component_pres.py
+transfer_output_files = $(output_dir)
+
+arguments = $(process) $(input_root_files) $(output_dir) --qcd
+
+queue 4
+
