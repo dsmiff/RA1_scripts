@@ -86,7 +86,7 @@ class PredictionPlot():
         self.njet_string = grabr.jet_string_fine(njet) if self.fineJetMulti else grabr.jet_string_old(njet)
         self.btag = btag
         self.btag_string = grabr.btag_string(btag) # e.g. eq0b -> btag_zero
-        self.htbins = htbins  # can be single bin or many
+        self.htbins = htbins  # can be single bin or many - if this is a list, then it'll *SUM* over all the ht bins
         self.htstring = self.make_ht_string(htbins)
         self.rebin = rebin
         self.log = log
