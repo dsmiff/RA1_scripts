@@ -195,6 +195,12 @@ class PredictionPlot():
         """
         Rebin a histogram either by combining rebin bins together, or by
         asking for a specific binning (pass list as rebin arg)
+
+        NOTE: if you're using a ROOT version earlier than 5.34/22, you're
+        gonna have abad time if you try setting the upper bin beyond the current
+        upper bin edge. See: https://sft.its.cern.ch/jira/browse/ROOT-6706
+
+        I don't want anyone else to waste a day of their life doing this.
         """
         if not rebin:
             rebin = self.rebin
