@@ -155,11 +155,11 @@ ROOTdir, out_dir, HTbins, title, plot_vars, rebin_d = [
 
    ["/Users/robina/AlphaT/Root_Files_07April_0p55_fullLatest_hadOnly_noPhi_v0", # pre-approved analysis
         "./07April_0p55_fullLatest_hadOnly_noPhi_v0/",
-        allHTbins[3:], # only need for 375 onwards
+        allHTbins[:], # only need for 375 onwards
         "#alpha_{T} > 0.55",
         ["ComMinBiasDPhi_acceptedJets", "AlphaT", "HT", "MHT"],
         {"HT": 10, "MHT": 10}]
-][-2] # SELECT YOUR SAMPLE
+][-1] # SELECT YOUR SAMPLE
 
 
 def do_a_plot_HT_incl(root_dir, out_dir, var="ComMinBiasDPhi_acceptedJets", njet="eq3j", btag="eq0b", check=False, custom_title="#alpha_{T} > 0.55", qcd=False):
