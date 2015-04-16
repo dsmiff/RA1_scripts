@@ -29,10 +29,7 @@ r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1111)
 r.TH1.AddDirectory(r.kFALSE)
 
-# setup logger
-console_handler = logging.StreamHandler()
-root = logging.getLogger()
-root.addHandler(console_handler)
+# setup logger - mostly done in plot_grabber
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
@@ -439,7 +436,6 @@ class PredictionPlot():
         """
 
         for ctrl in ctrl_regions:
-            log.debug("**** DOING %s" % ctrl)
 
             if "Muon" in ctrl:
                 ctrl_start = "Muon"
@@ -468,6 +464,8 @@ class PredictionPlot():
             if ctrl in processes:
                 if not processes[ctrl]:
                         continue
+
+                log.debug("**** DOING %s" % ctrl)
 
                 for ht in self.htbins:
 
@@ -534,7 +532,7 @@ class PredictionPlot():
                         hist_stat_total.Add(hist_data_control.Clone())
                         hist_syst_total.Add(h_syst)
 
-                    # log.debug("%s Estimate: %g %g" % (ctrl, hist_data_control.Integral(), hist_data_control.GetNbinsX()))
+                    log.debug("%s Estimate: %g %g" % (ctrl, hist_data_control.Integral(), hist_data_control.GetNbinsX()))
 
                 # Add the prediction to a list
                 self.component_hists.append(hist_total)
@@ -554,13 +552,14 @@ class PredictionPlot():
 
         # Add in QCD in signal region if desired
         if self.qcd:
+            log.debug("**** DOING QCD")
             hist_qcd = None
             hist_qcd_stat = None
             hist_qcd_syst = None
             for ht in self.htbins:
                 h_qcd_tmp = grabr.grab_plots(f_path="%s/%s_%s.root" % (self.ROOTdir, "Had", "QCD"),
                                              sele=signal_proc, h_title=self.var, njet=self.njet, btag=self.btag, ht_bins=ht)
-                log.debug("QCD %g" % h_qcd_tmp.Integral())
+                log.debug("QCD (%s): %g" % (ht, h_qcd_tmp.Integral()))
                 h_qcd_tmp.SetName("QCD")  # for styling later
                 h_qcd_tmp = self.rebin_hist(h_qcd_tmp)
                 if not hist_qcd:
@@ -579,6 +578,7 @@ class PredictionPlot():
                     hist_qcd_syst.Add(h_qcd_syst)
 
             self.component_hists.append(hist_qcd)
+            log.debug("Total QCD: %g" % hist_qcd.Integral())
 
             # stat & syst error bars for QCD overall
             self.style_hist_err1(hist_qcd_stat)

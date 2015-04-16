@@ -241,9 +241,14 @@ def grab_plots(f_path = "", h_title = "", sele = "OneMuon", njet = "", btag = ""
             h.Scale( trig_eff(sele = sele,
                             ht = d.split("_")[-2] if "1075" != d[-4:] else d.split("_")[-1],
                             njet = jet_string(njet)) )
+            log.debug("trig eff scaling: %f" % (trig_eff(sele = sele,
+                            ht = d.split("_")[-2] if "1075" != d[-4:] else d.split("_")[-1],
+                            njet = jet_string(njet))))
             if "SMS" not in f_path.split("/")[-1]:
                 h.Scale( sb_corr(f_path.split("/")[-1].split("_")[1].split(".")[0]) )
+                log.debug("sideband corr: %f" % ( sb_corr(f_path.split("/")[-1].split("_")[1].split(".")[0]) ))
             h.Scale( lumi(sele) )
+            log.debug("lumi scaling: %f" %(lumi(sele)))
         if not h_total:
             h_total = h.Clone()
         else:
