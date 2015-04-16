@@ -220,7 +220,7 @@ def main(in_args=sys.argv[1:]):
     parser.add_argument("-v", "--var", help="variable to plot (if undefined, runs over all)", nargs="+")
     parser.add_argument("-j", "--njet", help="number of jets (if undefined, runs over all)", nargs="+")
     parser.add_argument("-b", "--btag", help="number of btags (if undefined, runs over all)", nargs="+")
-    parser.add_argument("-ht", help="specify HT bin(s) (if undefined, runs over all inclusive)", nargs="+")
+    parser.add_argument("--ht", help="specify HT bin(s) (if undefined, runs over all inclusive)", nargs="+")
     parser.add_argument("-c", "--check", help="don't make plots, just check they exist. prints list of those that don't so you can run them again.", action='store_true', default=False)
     parser.add_argument("--qcd", help="Add in QCD to main plot, but ignore in ratio plot.", action='store_true', default=False)
     args = parser.parse_args(in_args)
